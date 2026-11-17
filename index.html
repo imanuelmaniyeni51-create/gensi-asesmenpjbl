@@ -1,0 +1,2645 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SI-ASESMEN PjBL • SMK Negeri 1 Amarasi Selatan</title>
+    
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter & Times New Roman untuk dokumen resmi -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- jsPDF & html2canvas untuk Cetak / Ekspor PDF A4 Rapi -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <!-- Firebase SDK (Cloud Database & Auth Real-Time untuk 100 Guru & Admin Wakabid Kurikulum) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        window.fbModules = {
+            initializeApp, getAuth, signInAnonymously, signInWithCustomToken,
+            getFirestore, doc, setDoc, getDoc, collection, onSnapshot
+        };
+        window.dispatchEvent(new Event('firebase-ready'));
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+            color: #0f172a;
+        }
+
+        /* Styling khusus kertas dokumen resmi A4 di layar */
+        .document-sheet {
+            background: #ffffff;
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            padding: 2rem 2.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .kop-surat {
+            border-bottom: 3px double #0f172a;
+            padding-bottom: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .official-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .official-table th,
+        .official-table td {
+            border: 1px solid #334155;
+            padding: 0.45rem 0.6rem;
+            vertical-align: top;
+        }
+
+        .official-table th {
+            background-color: #f1f5f9;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        [contenteditable="true"]:hover {
+            background-color: #fefce8;
+            outline: 1px dashed #eab308;
+            cursor: text;
+        }
+
+        [contenteditable="true"]:focus {
+            background-color: #ffffff;
+            outline: 2px solid #4f46e5;
+        }
+
+        /* =========================================================
+           ATURAN CETAK (MEDIA PRINT) - KERTAS A4 ANTI TERPOTONG
+           ========================================================= */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 12mm 12mm 12mm 12mm;
+            }
+
+            html, body {
+                display: block !important;
+                height: auto !important;
+                overflow: visible !important;
+                background: #ffffff !important;
+                color: #000000 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .tab-content {
+                display: none !important;
+            }
+
+            .tab-content.active-tab {
+                display: block !important;
+                height: auto !important;
+                overflow: visible !important;
+            }
+
+            .document-sheet {
+                box-shadow: none !important;
+                border: none !important;
+                border-radius: 0 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow: visible !important;
+            }
+
+            .table-responsive-wrapper {
+                overflow: visible !important;
+                width: 100% !important;
+            }
+
+            .official-table {
+                font-size: 8.5pt !important;
+                width: 100% !important;
+                table-layout: auto !important;
+            }
+
+            .official-table th {
+                background-color: #e2e8f0 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            .official-table th,
+            .official-table td {
+                border: 1px solid #000000 !important;
+                padding: 3.5pt 4.5pt !important;
+                word-wrap: break-word !important;
+            }
+
+            tr, .signature-block, .lkpd-stage-box {
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+            }
+
+            .page-break-before {
+                break-before: page !important;
+                page-break-before: always !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="no-print fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
+
+    <!-- =====================================================================
+         PORTAL LOGIN MULTI-GURU (100 GURU) & ADMIN WAKABID KURIKULUM
+         ===================================================================== -->
+    <div id="auth-overlay" class="no-print fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-auto">
+            <!-- Header Modal Login -->
+            <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-6 text-white text-center">
+                <div class="w-14 h-14 mx-auto bg-indigo-600/30 border border-indigo-400/40 rounded-2xl flex items-center justify-center mb-3">
+                    <i data-lucide="shield-check" class="w-8 h-8 text-indigo-300"></i>
+                </div>
+                <h2 class="text-lg sm:text-xl font-extrabold tracking-tight">PORTAL AKSES SI-ASESMEN PjBL</h2>
+                <p class="text-xs text-indigo-200 mt-1">SMK Negeri 1 Amarasi Selatan • Sinkronisasi Cloud Multi-Guru & Kurikulum</p>
+                <div id="cloud-status-pill" class="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-amber-500/20 text-amber-200 border border-amber-400/30">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                    <span>Menghubungkan ke Server Cloud...</span>
+                </div>
+            </div>
+
+            <!-- Pilihan Mode Login: Guru vs Admin Wakabid Kurikulum -->
+            <div class="grid grid-cols-2 border-b border-slate-200 bg-slate-50 p-1.5 gap-1.5">
+                <button type="button" id="tab-login-guru" onclick="switchLoginRole('guru')" class="py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold bg-indigo-600 text-white shadow-sm transition flex items-center justify-center gap-2">
+                    <i data-lucide="user-check" class="w-4 h-4"></i>
+                    <span>Login Guru Mapel</span>
+                </button>
+                <button type="button" id="tab-login-admin" onclick="switchLoginRole('admin')" class="py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-200/70 transition flex items-center justify-center gap-2">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                    <span>Admin Wakabid Kurikulum</span>
+                </button>
+            </div>
+
+            <!-- Form Login Guru (Nama Guru + Mata Pelajaran) -->
+            <form id="form-login-guru" onsubmit="handleGuruLogin(event)" class="p-6 space-y-4">
+                <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-xs text-indigo-950 leading-relaxed">
+                    <strong>Info Penyimpanan Akun Guru:</strong> Masukkan <strong>Nama Lengkap Guru</strong> dan <strong>Mata Pelajaran</strong> yang sama saat kembali mengakses aplikasi agar seluruh 6 perangkat asesmen Anda otomatis dimuat kembali tanpa hilang.
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Nama Lengkap Guru (Beserta Gelar) <span class="text-rose-600">*</span></label>
+                    <input type="text" id="login-nama-guru" required list="registered-teachers-list" placeholder="Contoh: Imanuel Maniyeni, S.Pd." class="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <datalist id="registered-teachers-list"></datalist>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Mata Pelajaran yang Diampu <span class="text-rose-600">*</span></label>
+                    <input type="text" id="login-mapel-guru" required list="registered-mapel-list" placeholder="Contoh: Agribisnis Tanaman Pangan dan Hortikultura" class="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <datalist id="registered-mapel-list"></datalist>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">NIP Guru (Opsional / Otomatis Terisi jika Pernah Masuk)</label>
+                    <input type="text" id="login-nip-guru" placeholder="Contoh: 19880512 201503 1 004" class="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+
+                <button type="submit" id="btn-submit-guru" class="w-full py-3 px-4 rounded-xl text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/20 transition flex items-center justify-center gap-2">
+                    <i data-lucide="log-in" class="w-4 h-4"></i>
+                    <span>Masuk &amp; Muat Ruang Kerja Guru</span>
+                </button>
+            </form>
+
+            <!-- Form Login Admin Wakabid Kurikulum -->
+            <form id="form-login-admin" onsubmit="handleAdminLogin(event)" class="hidden p-6 space-y-4">
+                <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-950 leading-relaxed">
+                    <strong>Panel Monitoring Wakabid Kurikulum:</strong> Memantau progres pengisian 6 menu dokumen (Kisi-Kisi, LKPD, Rubrik, Instrumen, Laporan Nilai, dan Refleksi Guru) dari seluruh guru secara <em>real-time</em>.
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Kata Sandi Admin Wakabid Kurikulum <span class="text-rose-600">*</span></label>
+                    <input type="password" id="login-admin-password" required placeholder="Masukkan kata sandi admin..." class="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                    <p id="admin-login-error" class="hidden mt-1.5 text-xs font-semibold text-rose-600">Kata sandi salah! Silakan periksa kembali kata sandi Admin Wakabid Kurikulum.</p>
+                </div>
+
+                <button type="submit" class="w-full py-3 px-4 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2">
+                    <i data-lucide="shield" class="w-4 h-4"></i>
+                    <span>Masuk Sebagai Admin Wakabid Kurikulum</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Top Navigation Bar -->
+    <nav class="no-print bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 p-2 rounded-xl shadow-inner">
+                    <i data-lucide="graduation-cap" class="w-6 h-6 text-white"></i>
+                </div>
+                <div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h1 class="text-base sm:text-lg font-extrabold tracking-tight">SI-ASESMEN PjBL</h1>
+                        <span id="active-session-badge" class="hidden px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-500/25 text-indigo-200 border border-indigo-400/30"></span>
+                        <span id="sync-indicator" class="hidden inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Tersimpan di Cloud
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-400">Generator Perangkat Asesmen Sumatif Proyek • SMK Negeri 1 Amarasi Selatan</p>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="toggleParameterPanel()" id="btn-toggle-param" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+                    <i data-lucide="sliders-horizontal" class="w-4 h-4 text-indigo-400"></i>
+                    <span>Sembunyikan Parameter</span>
+                </button>
+                <button type="button" id="btn-back-to-admin" onclick="returnToAdminDashboard()" class="hidden inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-bold bg-amber-600 hover:bg-amber-500 text-white shadow transition">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    <span>Kembali ke Dashboard Admin</span>
+                </button>
+                <button type="button" id="btn-export-pdf" onclick="exportToPDF()" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-950/30 transition cursor-pointer">
+                    <i data-lucide="file-down" class="w-4 h-4"></i>
+                    <span>Cetak Dokumen (PDF A4)</span>
+                </button>
+                <button type="button" onclick="logoutSession()" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-rose-600/90 hover:bg-rose-600 text-white transition" title="Ganti Akun Guru / Keluar">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                    <span>Keluar / Ganti Akun</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- =====================================================================
+         DASHBOARD MONITORING ADMIN WAKABID KURIKULUM (REAL-TIME)
+         ===================================================================== -->
+    <section id="admin-dashboard-panel" class="no-print hidden max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <!-- Header Dashboard Admin -->
+            <div class="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 px-6 py-5 text-white flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 bg-emerald-500/20 rounded-xl border border-emerald-400/30">
+                        <i data-lucide="activity" class="w-6 h-6 text-emerald-300"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-base sm:text-lg font-extrabold tracking-tight">DASHBOARD MONITORING WAKABID KURIKULUM</h2>
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/25 text-emerald-200 border border-emerald-400/30">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> LIVE REAL-TIME
+                            </span>
+                        </div>
+                        <p class="text-xs text-emerald-100/80 mt-0.5">Pemantauan Progres Pengisian 6 Menu Perangkat Asesmen Sumatif PjBL per Guru &amp; Mata Pelajaran (Kapasitas 100+ Guru)</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="exportAdminRecapCSV()" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white border border-white/20 transition">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        <span>Unduh Rekap Progres (CSV)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Kartu Ringkasan Statistik Sekolah -->
+            <div class="p-6 space-y-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="admin-summary-cards">
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                        <p class="text-xs font-semibold text-slate-500">Total Akun Guru &amp; Mapel Terdaftar</p>
+                        <p id="stat-total-records" class="text-2xl font-extrabold text-slate-900 mt-1">0</p>
+                        <p class="text-[11px] text-slate-500 mt-0.5">Kapasitas Cloud Aktif (100 Guru)</p>
+                    </div>
+                    <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                        <p class="text-xs font-semibold text-emerald-700">Lengkap 100% (6/6 Menu)</p>
+                        <p id="stat-completed-records" class="text-2xl font-extrabold text-emerald-900 mt-1">0</p>
+                        <p class="text-[11px] text-emerald-700 mt-0.5">Siap Cetak &amp; Pengesahan</p>
+                    </div>
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                        <p class="text-xs font-semibold text-amber-700">Dalam Proses Pengisian</p>
+                        <p id="stat-inprogress-records" class="text-2xl font-extrabold text-amber-900 mt-1">0</p>
+                        <p class="text-[11px] text-amber-700 mt-0.5">Sebagian Menu Sudah Terisi</p>
+                    </div>
+                    <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
+                        <p class="text-xs font-semibold text-indigo-700">Rata-Rata Ketercapaian Sekolah</p>
+                        <p id="stat-avg-progress" class="text-2xl font-extrabold text-indigo-950 mt-1">0%</p>
+                        <p class="text-[11px] text-indigo-700 mt-0.5">Akumulasi 6 Menu Perangkat</p>
+                    </div>
+                </div>
+
+                <!-- Filter & Pencarian Guru/Mapel -->
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                    <div class="relative flex-1">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                        <input type="text" id="admin-search-input" oninput="renderAdminMonitoringTable()" placeholder="Cari berdasarkan Nama Guru, NIP, Mata Pelajaran, atau Kelas..." class="w-full pl-10 pr-4 py-2 text-xs sm:text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <select id="admin-filter-status" onchange="renderAdminMonitoringTable()" class="px-3 py-2 text-xs sm:text-sm bg-white border border-slate-300 rounded-lg font-medium text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-none">
+                            <option value="all">Semua Status Progres</option>
+                            <option value="complete">Lengkap (100% / 6 Menu)</option>
+                            <option value="progress">Belum Lengkap (&lt; 100%)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Tabel Monitoring Progres 6 Menu per Guru per Mapel -->
+                <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-900 text-white">
+                                <th class="py-3 px-3 text-center w-10">No</th>
+                                <th class="py-3 px-3 min-w-[170px]">Nama Guru &amp; NIP</th>
+                                <th class="py-3 px-3 min-w-[180px]">Mata Pelajaran &amp; Fase</th>
+                                <th class="py-3 px-2 text-center" title="Menu 1: Kisi-Kisi Sumatif">M1<br><span class="text-[10px] font-normal text-slate-300">Kisi-Kisi</span></th>
+                                <th class="py-3 px-2 text-center" title="Menu 2: LKPD Proyek">M2<br><span class="text-[10px] font-normal text-slate-300">LKPD</span></th>
+                                <th class="py-3 px-2 text-center" title="Menu 3: Rubrik Penilaian">M3<br><span class="text-[10px] font-normal text-slate-300">Rubrik</span></th>
+                                <th class="py-3 px-2 text-center" title="Menu 4: Instrumen Asesmen Manual">M4<br><span class="text-[10px] font-normal text-slate-300">Instrumen</span></th>
+                                <th class="py-3 px-2 text-center" title="Menu 5: Input Laporan Nilai Sumatif">M5<br><span class="text-[10px] font-normal text-slate-300">Nilai</span></th>
+                                <th class="py-3 px-2 text-center" title="Menu 6: Refleksi Guru">M6<br><span class="text-[10px] font-normal text-slate-300">Refleksi</span></th>
+                                <th class="py-3 px-3 text-center min-w-[125px]">Total Progres</th>
+                                <th class="py-3 px-3 text-center min-w-[120px]">Pembaruan Terakhir</th>
+                                <th class="py-3 px-3 text-center w-28">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-monitoring-tbody" class="divide-y divide-slate-200 bg-white">
+                            <tr>
+                                <td colspan="12" class="py-8 text-center text-slate-500">Memuat data progres perangkat guru secara real-time...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content Wrapper (Ruang Kerja Guru / Pratinjau Dokumen) -->
+    <main id="workspace-main" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- =====================================================================
+             PANEL PARAMETER PERANGKAT ASESMEN & AI GENERATOR (NO-PRINT)
+             ===================================================================== -->
+        <section id="parameter-panel" class="no-print bg-white rounded-2xl shadow-sm border border-slate-200 mb-6 overflow-hidden transition-all">
+            <!-- Header Panel Parameter -->
+            <div class="bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-900 px-6 py-4 text-white flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 bg-indigo-500/20 rounded-xl border border-indigo-400/30">
+                        <i data-lucide="settings-2" class="w-5 h-5 text-indigo-300"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-sm sm:text-base font-bold tracking-tight">Parameter Perangkat Asesmen &amp; Integrasi AI</h2>
+                        <p class="text-xs text-indigo-200">Seluruh isian di bawah otomatis tersinkronisasi ke 6 dokumen dan tersimpan pada akun Anda secara real-time</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 text-xs">
+                    <button type="button" onclick="resetToDefault()" class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white border border-white/15 transition flex items-center gap-1.5">
+                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Reset Default
+                    </button>
+                </div>
+            </div>
+
+            <!-- Baris Regulasi Kemendikdasmen -->
+            <div class="bg-indigo-50/80 border-b border-indigo-100 px-6 py-2.5 flex flex-wrap items-center gap-x-6 gap-y-1.5 text-xs text-indigo-950">
+                <span class="font-bold flex items-center gap-1.5 text-indigo-800">
+                    <i data-lucide="shield-check" class="w-4 h-4 text-indigo-600"></i> Landasan Hukum:
+                </span>
+                <span>• <strong>Kep. BSKAP No. 046/H/KR/2025</strong> (CP Fase E &amp; F)</span>
+                <span>• <strong>Kep. BKPDM No. 020 Tahun 2026</strong> (CP PAI)</span>
+                <span>• <strong>Kep. BSKAP No. 058/H/KR/2025</strong> (8 Dimensi Profil Lulusan &amp; Deep Learning)</span>
+            </div>
+
+            <div class="p-6 space-y-6">
+                <!-- Grid 2 Kartu Utama Parameter -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- KARTU 1: IDENTITAS SATUAN PENDIDIKAN, MAPEL & GURU -->
+                    <div class="bg-slate-50/80 border border-slate-200 rounded-xl p-5 space-y-4">
+                        <div class="flex items-center gap-2 pb-2.5 border-b border-slate-200">
+                            <span class="w-6 h-6 rounded-lg bg-indigo-600 text-white text-xs font-bold flex items-center justify-center">1</span>
+                            <h3 class="text-xs sm:text-sm font-extrabold text-slate-800 uppercase tracking-wide">Identitas Satuan Pendidikan, Mapel &amp; Guru</h3>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <!-- Logo Kiri & Kanan -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Logo Kiri (Provinsi NTT)</label>
+                                <div class="flex gap-1.5">
+                                    <input type="text" data-bind="logoKiri" class="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Bawaan: NTT.png atau URL...">
+                                    <label class="px-2.5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-semibold cursor-pointer flex items-center" title="Unggah File Logo NTT">
+                                        <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                                        <input type="file" accept="image/*" class="hidden" onchange="handleLogoUpload('logoKiri', this)">
+                                    </label>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Logo Kanan (SMK Negeri 1 Amarasi Selatan)</label>
+                                <div class="flex gap-1.5">
+                                    <input type="text" data-bind="logoKanan" class="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Bawaan: Logo Sekolah.png atau URL...">
+                                    <label class="px-2.5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-semibold cursor-pointer flex items-center" title="Unggah File Logo Sekolah">
+                                        <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                                        <input type="file" accept="image/*" class="hidden" onchange="handleLogoUpload('logoKanan', this)">
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Mata Pelajaran & Kompetensi Keahlian -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Mata Pelajaran</label>
+                                <input type="text" data-bind="mapel" class="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Kompetensi / Konsentrasi Keahlian</label>
+                                <input type="text" data-bind="kompetensiKeahlian" class="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+
+                            <!-- Kelas / Fase (Dropdown) -->
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Kelas / Fase (BSKAP 046/2025)</label>
+                                <select id="select-kelasFase" onchange="handleDropdownWithCustom('kelasFase', this.value)" class="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                                    <option value="Kelas X / Fase E (Kurikulum Merdeka - Kep. BSKAP 046/H/KR/2025)">Kelas X / Fase E (Kurikulum Merdeka - Kep. BSKAP 046/H/KR/2025)</option>
+                                    <option value="Kelas XI / Fase F (Kurikulum Merdeka - Kep. BSKAP 046/H/KR/2025)">Kelas XI / Fase F (Kurikulum Merdeka - Kep. BSKAP 046/H/KR/2025)</option>
+                                    <option value="Kelas XII / Fase F (Kurikulum Merdeka - Kep. BSKAP 046/H/KR/2025)">Kelas XII / Fase F (Kurikulum Merdeka - Kep. BSKAP 046/H/KR/2025)</option>
+                                    <option value="__CUSTOM__">Input Manual / Kustom...</option>
+                                </select>
+                                <input type="text" id="custom-kelasFase" data-bind="kelasFase" class="hidden mt-2 w-full px-3 py-2 text-xs sm:text-sm bg-white border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Ketik Kelas / Fase secara manual...">
+                            </div>
+
+                            <!-- Semester & Tahun Pelajaran -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Semester</label>
+                                <select data-bind="semester" class="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                                    <option value="Genap">Genap</option>
+                                    <option value="Ganjil">Ganjil</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Tahun Pelajaran</label>
+                                <input type="text" data-bind="tahunPelajaran" class="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+
+                            <!-- Nama Guru & NIP Guru -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Nama Guru Penyusun</label>
+                                <input type="text" data-bind="namaGuru" class="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">NIP Guru</label>
+                                <input type="text" data-bind="nipGuru" class="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+
+                            <!-- Tempat, Tanggal Pengesahan -->
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Tempat, Tanggal Pengesahan</label>
+                                <input type="text" data-bind="tempatTanggalPengesahan" class="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Contoh: Retraen, 15 Mei 2026">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KARTU 2: DESAIN PROYEK, CAPAIAN & KARAKTERISTIK MURID -->
+                    <div class="bg-slate-50/80 border border-slate-200 rounded-xl p-5 space-y-4">
+                        <div class="flex items-center gap-2 pb-2.5 border-b border-slate-200">
+                            <span class="w-6 h-6 rounded-lg bg-emerald-600 text-white text-xs font-bold flex items-center justify-center">2</span>
+                            <h3 class="text-xs sm:text-sm font-extrabold text-slate-800 uppercase tracking-wide">Desain Proyek, Capaian &amp; Karakteristik Murid</h3>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <!-- Tema / Judul Proyek -->
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Tema / Judul Proyek</label>
+                                <input type="text" data-bind="temaProyek" class="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+
+                            <!-- Lintas Disiplin Ilmu & Alokasi Waktu -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Lintas Disiplin Ilmu (Opsional)</label>
+                                <input type="text" data-bind="lintasDisiplin" class="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Alokasi Waktu Ujian Proyek</label>
+                                <input type="text" data-bind="alokasiWaktu" class="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+
+                            <!-- Bentuk Proyek (Dropdown) -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Bentuk Proyek</label>
+                                <select id="select-bentukProyek" onchange="handleDropdownWithCustom('bentukProyek', this.value)" class="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                                    <option value="Proyek Kolaboratif Kelompok (3–5 Peserta Didik per Tim)">Proyek Kolaboratif Kelompok (3–5 Peserta Didik per Tim)</option>
+                                    <option value="Proyek Individu Mandiri Berbasis Portofolio">Proyek Individu Mandiri Berbasis Portofolio</option>
+                                    <option value="Proyek Berpasangan (Peer-Collaboration / Pair Work)">Proyek Berpasangan (Peer-Collaboration / Pair Work)</option>
+                                    <option value="Proyek Berbasis Teaching Factory (TeFa) / Pesanan Industri">Proyek Berbasis Teaching Factory (TeFa) / Pesanan Industri</option>
+                                    <option value="Proyek Lintas Konsentrasi Keahlian (Kolaborasi Antar-Jurusan)">Proyek Lintas Konsentrasi Keahlian (Kolaborasi Antar-Jurusan)</option>
+                                    <option value="__CUSTOM__">Input Manual / Kustom...</option>
+                                </select>
+                                <input type="text" id="custom-bentukProyek" data-bind="bentukProyek" class="hidden mt-2 w-full px-3 py-2 text-xs sm:text-sm bg-white border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Ketik Bentuk Proyek secara manual...">
+                            </div>
+
+                            <!-- Tagihan / Produk Proyek (Dropdown) -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Tagihan / Produk Proyek</label>
+                                <select id="select-tagihanProyek" onchange="handleDropdownWithCustom('tagihanProyek', this.value)" class="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                                    <option value="Unit Sistem / Instalasi / Budidaya Nyata, Laporan Teknis & Presentasi">Unit Sistem / Instalasi / Budidaya Nyata, Laporan Teknis &amp; Presentasi</option>
+                                    <option value="Prototipe Alat / Rekayasa Teknologi Terapan, Video Demo & Manual Book">Prototipe Alat / Rekayasa Teknologi Terapan, Video Demo &amp; Manual Book</option>
+                                    <option value="Produk Barang Jadi / Olahan Pangan / Kriya Siap Jual, Kemasan & Analisis Usaha">Produk Barang Jadi / Olahan Pangan / Kriya Siap Jual, Kemasan &amp; Analisis Usaha</option>
+                                    <option value="Produk Digital / Aplikasi / Desain Multimedia, Source Code & Dokumentasi">Produk Digital / Aplikasi / Desain Multimedia, Source Code &amp; Dokumentasi</option>
+                                    <option value="Jasa Layanan / Simulasi SOP Industri, Lembar Kerja & Laporan Evaluasi">Jasa Layanan / Simulasi SOP Industri, Lembar Kerja &amp; Laporan Evaluasi</option>
+                                    <option value="Laporan Penelitian Terapan, Poster Infografis & Pameran Karya">Laporan Penelitian Terapan, Poster Infografis &amp; Pameran Karya</option>
+                                    <option value="__CUSTOM__">Input Manual / Kustom...</option>
+                                </select>
+                                <input type="text" id="custom-tagihanProyek" data-bind="tagihanProyek" class="hidden mt-2 w-full px-3 py-2 text-xs sm:text-sm bg-white border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Ketik Tagihan Proyek secara manual...">
+                            </div>
+
+                            <!-- Karakteristik Murid (Dropdown) -->
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Karakteristik Murid (Kesiapan, Gaya Belajar, Minat Kejuruan &amp; Konteks Lokal)</label>
+                                <select id="select-karakteristikMurid" onchange="handleDropdownWithCustom('karakteristikMurid', this.value)" class="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                                    <option value="Konteks Lokal & Agraris (Mayoritas berasal dari lingkungan pertanian/peternakan Amarasi Selatan, kuat pada praktik lapangan & gotong royong, membutuhkan penguatan literasi teknis dan penyusunan laporan sistematis)">Konteks Lokal &amp; Agraris (Praktik lapangan &amp; gotong royong kuat, butuh penguatan laporan teknis)</option>
+                                    <option value="Kesiapan Heterogen & Gaya Belajar Kinestetik-Visual (Mayoritas cepat memahami demonstrasi langsung & media visual, kesiapan awal bervariasi sehingga memerlukan scaffolding bertahap dan pembagian peran kelompok)">Kesiapan Heterogen &amp; Gaya Belajar Kinestetik-Visual (Memerlukan scaffolding &amp; pembagian peran)</option>
+                                    <option value="Kesiapan Tingkat Lanjut & Minat Wirausaha/TeFa (Memiliki dasar keterampilan kejuruan yang baik, antusias pada tantangan produk bernilai jual, siap diarahkan ke proyek berstandar industri)">Kesiapan Tingkat Lanjut &amp; Minat Wirausaha/TeFa (Siap proyek berstandar industri/jual)</option>
+                                    <option value="Penguatan Fondasi Prosedural & K3 (Membutuhkan pendampingan ketat pada keselamatan kerja/K3, penggunaan alat ukur/kerja standar, serta instruksi kerja terstruktur langkah demi langkah)">Penguatan Fondasi Prosedural &amp; K3 (Membutuhkan instruksi langkah demi langkah &amp; K3)</option>
+                                    <option value="__CUSTOM__">Input Manual / Kustom...</option>
+                                </select>
+                                <textarea id="custom-karakteristikMurid" data-bind="karakteristikMurid" rows="2" class="hidden mt-2 w-full px-3 py-2 text-xs sm:text-sm bg-white border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Ketik deskripsi karakteristik murid secara manual..."></textarea>
+                            </div>
+
+                            <!-- Capaian Pembelajaran -->
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Capaian Pembelajaran (Kep. BSKAP 046/2025 &amp; BKPDM 020/2026)</label>
+                                <textarea data-bind="capaianPembelajaran" rows="2" class="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                            </div>
+
+                            <!-- Tujuan Pembelajaran -->
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Tujuan Pembelajaran</label>
+                                <textarea data-bind="tujuanProyek" rows="2" class="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Selektor Interaktif 8 Dimensi Profil Lulusan (Kep. BSKAP 058/H/KR/2025) -->
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <label class="text-xs font-extrabold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
+                            <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i>
+                            Integrasi 8 Dimensi Profil Lulusan &amp; Deep Learning (Kep. Kepala BSKAP No. 058/H/KR/2025)
+                        </label>
+                        <span class="text-[11px] font-medium text-slate-500">Pilih dimensi karakter yang dinilai dalam proyek</span>
+                    </div>
+                    <div id="dimensi-checkboxes" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                        <!-- Diisi otomatis via JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Kotak Prompt Asisten Kurikulum AI -->
+                <div class="bg-gradient-to-r from-indigo-50 via-blue-50 to-emerald-50 border border-indigo-200 rounded-xl p-4">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                        <div class="flex-1">
+                            <label class="block text-xs font-extrabold text-indigo-950 mb-1 flex items-center gap-1.5">
+                                <i data-lucide="bot" class="w-4 h-4 text-indigo-600"></i>
+                                Asisten Kurikulum AI (Generator Ide Tema &amp; Perangkat PjBL Otomatis)
+                            </label>
+                            <div class="flex flex-col sm:flex-row gap-2">
+                                <input type="text" id="ai-prompt-input" placeholder="Ketik fokus proyek kejuruan Anda, misal: 'Pembuatan pupuk organik cair dari limbah ternak Amarasi'..." class="flex-1 px-3.5 py-2 text-xs sm:text-sm bg-white border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                                <button type="button" id="btn-generate-ai" onclick="generateWithAI()" class="px-4 py-2 rounded-lg text-xs sm:text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow transition flex items-center justify-center gap-2 shrink-0">
+                                    <i data-lucide="wand-2" class="w-4 h-4"></i>
+                                    <span>Generate Ide &amp; Perangkat</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-2.5 pt-2 border-t border-indigo-200/60 flex flex-wrap items-center justify-between gap-2 text-[11px] text-indigo-900">
+                        <span>Rujukan Resmi Kemendikdasmen:</span>
+                        <div class="flex flex-wrap gap-3">
+                            <a href="https://kurikulum.kemdikbud.go.id/" target="_blank" rel="noopener noreferrer" class="underline hover:text-indigo-600 font-semibold flex items-center gap-1">
+                                Portal Kurikulum Kemendikdasmen <i data-lucide="external-link" class="w-3 h-3"></i>
+                            </a>
+                            <a href="https://guru.kemdikbud.go.id/" target="_blank" rel="noopener noreferrer" class="underline hover:text-indigo-600 font-semibold flex items-center gap-1">
+                                Ruang GTK &amp; Panduan Deep Learning <i data-lucide="external-link" class="w-3 h-3"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =====================================================================
+             NAVIGASI TAB 6 MENU DOKUMEN (NO-PRINT)
+             ===================================================================== -->
+        <div class="no-print mb-5 overflow-x-auto pb-1">
+            <div class="inline-flex min-w-full sm:min-w-0 bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm gap-1">
+                <button type="button" onclick="switchTab('kisi')" id="tab-btn-kisi" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold bg-indigo-600 text-white shadow-sm transition whitespace-nowrap">
+                    1. Kisi-Kisi Sumatif
+                </button>
+                <button type="button" onclick="switchTab('lkpd')" id="tab-btn-lkpd" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-100 transition whitespace-nowrap">
+                    2. LKPD Proyek
+                </button>
+                <button type="button" onclick="switchTab('rubrik')" id="tab-btn-rubrik" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-100 transition whitespace-nowrap">
+                    3. Rubrik Penilaian
+                </button>
+                <button type="button" onclick="switchTab('manual')" id="tab-btn-manual" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-100 transition whitespace-nowrap">
+                    4. Instrumen Asesmen Manual
+                </button>
+                <button type="button" onclick="switchTab('nilai')" id="tab-btn-nilai" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-100 transition whitespace-nowrap">
+                    5. Input Laporan Nilai Sumatif
+                </button>
+                <button type="button" onclick="switchTab('refleksi')" id="tab-btn-refleksi" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-100 transition whitespace-nowrap">
+                    6. Refleksi Guru
+                </button>
+            </div>
+        </div>
+
+        <!-- =====================================================================
+             MENU 1: KISI-KISI SUMATIF
+             ===================================================================== -->
+        <div id="tab-kisi" class="tab-content active-tab">
+            <div class="document-sheet">
+                <!-- Kop Surat Resmi -->
+                <div class="kop-surat-container"></div>
+
+                <!-- Judul Dokumen -->
+                <div class="text-center mb-5">
+                    <h3 class="text-sm sm:text-base font-extrabold uppercase tracking-wide underline">
+                        KISI – KISI ASESMEN SUMATIF AKHIR SEMESTER <span class="out-semester-upper">GENAP</span> BERBASIS PROYEK
+                    </h3>
+                    <p class="text-xs font-semibold text-slate-700 mt-0.5">TAHUN PELAJARAN <span class="out-tahunPelajaran">2025/2026</span></p>
+                </div>
+
+                <!-- Tabel Vertikal Key-Value Kisi-Kisi -->
+                <div class="table-responsive-wrapper overflow-x-auto">
+                    <table class="official-table text-xs sm:text-sm">
+                        <tbody>
+                            <tr>
+                                <td class="w-1/3 font-bold bg-slate-50">Nama Penyusun</td>
+                                <td class="w-4 text-center font-bold bg-slate-50">:</td>
+                                <td class="out-namaGuru font-medium">Imanuel Maniyeni, S.Pd.</td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold bg-slate-50">Mata Pelajaran</td>
+                                <td class="text-center font-bold bg-slate-50">:</td>
+                                <td class="out-mapel font-medium">Agribisnis Tanaman Pangan dan Hortikultura</td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold bg-slate-50">Kelas / Fase</td>
+                                <td class="text-center font-bold bg-slate-50">:</td>
+                                <td class="out-kelasFase">Kelas XI / Fase F (Kurikulum Merdeka - Kep. BSKAP 046/H/KR/2025)</td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold bg-slate-50">Kompetensi Keahlian</td>
+                                <td class="text-center font-bold bg-slate-50">:</td>
+                                <td class="out-kompetensiKeahlian">Agribisnis Tanaman</td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold bg-slate-50">Karakteristik Murid</td>
+                                <td class="text-center font-bold bg-slate-50">:</td>
+                                <td contenteditable="true" class="out-karakteristikMurid leading-relaxed"></td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold bg-slate-50">Capaian Pembelajaran</td>
+                                <td class="text-center font-bold bg-slate-50">:</td>
+                                <td contenteditable="true" class="out-capaianPembelajaran leading-relaxed"></td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold bg-slate-50">Tujuan Pembelajaran</td>
+                                <td class="text-center font-bold bg-slate-50">:</td>
+                                <td contenteditable="true" class="out-tujuanProyek leading-relaxed"></td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold bg-slate-50">Tema / Judul Proyek</td>
+                                <td class="text-center font-bold bg-slate-50">:</td>
+                                <td class="out-temaProyek font-bold text-slate-900"></td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold bg-slate-50">Tujuan Proyek</td>
+                                <td class="text-center font-bold bg-slate-50">:</td>
+                                <td contenteditable="true" class="out-tujuanProyek leading-relaxed"></td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold bg-slate-50">Lintas Disiplin Ilmu</td>
+                                <td class="text-center font-bold bg-slate-50">:</td>
+                                <td class="out-lintasDisiplin"></td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold bg-slate-50">Alokasi Waktu Ujian Proyek</td>
+                                <td class="text-center font-bold bg-slate-50">:</td>
+                                <td class="out-alokasiWaktu"></td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold bg-slate-50">Bentuk Proyek</td>
+                                <td class="text-center font-bold bg-slate-50">:</td>
+                                <td class="out-bentukProyek"></td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold bg-slate-50">Materi Proyek</td>
+                                <td class="text-center font-bold bg-slate-50">:</td>
+                                <td contenteditable="true" class="out-materiProyek leading-relaxed"></td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold bg-slate-50">Kompetensi Yang Dinilai</td>
+                                <td class="text-center font-bold bg-slate-50">:</td>
+                                <td class="space-y-2 leading-relaxed">
+                                    <div>
+                                        <strong>1. Pengetahuan:</strong>
+                                        <span contenteditable="true" class="out-kompPengetahuan"></span>
+                                    </div>
+                                    <div>
+                                        <strong>2. Keterampilan:</strong>
+                                        <span contenteditable="true" class="out-kompKeterampilan"></span>
+                                    </div>
+                                    <div>
+                                        <strong>3. Sikap/Karakter:</strong>
+                                        <span class="out-kompSikap"></span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold bg-slate-50">Deskripsi Tugas Proyek</td>
+                                <td class="text-center font-bold bg-slate-50">:</td>
+                                <td contenteditable="true" class="out-deskripsiTugas leading-relaxed"></td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold bg-slate-50">Tahapan Pelaksanaan Proyek</td>
+                                <td class="text-center font-bold bg-slate-50">:</td>
+                                <td contenteditable="true" class="out-tahapanPelaksanaan leading-relaxed"></td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold bg-slate-50">Kriteria Penilaian</td>
+                                <td class="text-center font-bold bg-slate-50">:</td>
+                                <td contenteditable="true" class="out-kriteriaPenilaian leading-relaxed"></td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold bg-slate-50">Tagihan Proyek</td>
+                                <td class="text-center font-bold bg-slate-50">:</td>
+                                <td class="out-tagihanProyek font-medium"></td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold bg-slate-50">Instrumen Penilaian</td>
+                                <td class="text-center font-bold bg-slate-50">:</td>
+                                <td contenteditable="true" class="out-instrumenPenilaian"></td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold bg-slate-50">Sumber Belajar</td>
+                                <td class="text-center font-bold bg-slate-50">:</td>
+                                <td contenteditable="true" class="out-sumberBelajar"></td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold bg-slate-50">Lain-lain</td>
+                                <td class="text-center font-bold bg-slate-50">:</td>
+                                <td contenteditable="true" class="out-lainLain"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Tanda Tangan Kepala Sekolah & Guru -->
+                <div class="signature-container"></div>
+            </div>
+        </div>
+
+        <!-- =====================================================================
+             MENU 2: LKPD PROYEK (6 SINTAKS PjBL - TANPA TTD KS, ADA NILAI & PARAF)
+             ===================================================================== -->
+        <div id="tab-lkpd" class="tab-content hidden">
+            <div class="document-sheet">
+                <div class="kop-surat-container"></div>
+
+                <div class="text-center mb-4">
+                    <h3 class="text-sm sm:text-base font-extrabold uppercase tracking-wide underline">
+                        LEMBAR KERJA PESERTA DIDIK (LKPD) BERBASIS PROYEK (PjBL)
+                    </h3>
+                    <p class="text-xs font-semibold text-slate-700 mt-0.5">ASESMEN SUMATIF AKHIR SEMESTER <span class="out-semester-upper">GENAP</span> • TAHUN PELAJARAN <span class="out-tahunPelajaran">2025/2026</span></p>
+                </div>
+
+                <!-- Identitas Proyek & Kelompok -->
+                <table class="official-table text-xs mb-5">
+                    <tbody>
+                        <tr>
+                            <td class="w-1/4 font-bold bg-slate-50">Mata Pelajaran</td>
+                            <td class="w-1/4 out-mapel"></td>
+                            <td class="w-1/4 font-bold bg-slate-50">Nama Kelompok / Tim</td>
+                            <td class="w-1/4" contenteditable="true">Kelompok ..........</td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold bg-slate-50">Kelas / Fase</td>
+                            <td class="out-kelasFase"></td>
+                            <td class="font-bold bg-slate-50">Alokasi Waktu</td>
+                            <td class="out-alokasiWaktu"></td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold bg-slate-50">Tema / Judul Proyek</td>
+                            <td colspan="3" class="font-bold out-temaProyek"></td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold bg-slate-50">Anggota Kelompok</td>
+                            <td colspan="3" contenteditable="true">1. ........................................ 2. ........................................ 3. ........................................ 4. ........................................</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- 6 Sintaks PjBL -->
+                <div class="space-y-4 text-xs sm:text-sm">
+                    <!-- Tahap 1 -->
+                    <div class="lkpd-stage-box border border-slate-400 rounded-lg overflow-hidden">
+                        <div class="bg-slate-800 text-white px-3.5 py-2 font-bold text-xs uppercase tracking-wider">
+                            TAHAP 1: PERTANYAAN MENDASAR (START WITH THE ESSENTIAL QUESTION)
+                        </div>
+                        <div class="p-3.5 space-y-2">
+                            <p class="font-semibold text-slate-800">Studi Kasus &amp; Masalah Kontekstual:</p>
+                            <p contenteditable="true" class="out-lkpdSintaks1 bg-slate-50 p-2.5 rounded border border-slate-200 leading-relaxed"></p>
+                            <p class="font-semibold text-slate-800 pt-1">Rumusan Pertanyaan Mendasar Kelompok:</p>
+                            <div contenteditable="true" class="min-h-[55px] border border-dashed border-slate-400 rounded p-2 text-slate-700">
+                                Tuliskan rumusan masalah utama yang akan diselesaikan melalui proyek kelompok Anda di sini...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tahap 2 -->
+                    <div class="lkpd-stage-box border border-slate-400 rounded-lg overflow-hidden">
+                        <div class="bg-slate-800 text-white px-3.5 py-2 font-bold text-xs uppercase tracking-wider">
+                            TAHAP 2: MENDESAIN PERENCANAAN PROYEK (DESIGN A PLAN FOR THE PROJECT)
+                        </div>
+                        <div class="p-3.5 space-y-2.5">
+                            <p contenteditable="true" class="out-lkpdSintaks2 leading-relaxed"></p>
+                            <table class="official-table text-xs">
+                                <thead>
+                                    <tr>
+                                        <th class="w-10 text-center">No</th>
+                                        <th>Nama Anggota Kelompok</th>
+                                        <th>Peran &amp; Tanggung Jawab</th>
+                                        <th>Alat &amp; Bahan yang Disiapkan</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td class="text-center">1</td><td contenteditable="true"></td><td contenteditable="true">Ketua Tim &amp; Koordinator K3</td><td contenteditable="true"></td></tr>
+                                    <tr><td class="text-center">2</td><td contenteditable="true"></td><td contenteditable="true">Perancang Teknis &amp; Pengukuran</td><td contenteditable="true"></td></tr>
+                                    <tr><td class="text-center">3</td><td contenteditable="true"></td><td contenteditable="true">Pelaksana Produksi / Perakitan</td><td contenteditable="true"></td></tr>
+                                    <tr><td class="text-center">4</td><td contenteditable="true"></td><td contenteditable="true">Dokumentasi, Pengujian &amp; Laporan</td><td contenteditable="true"></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tahap 3 (5 Pertemuan) -->
+                    <div class="lkpd-stage-box border border-slate-400 rounded-lg overflow-hidden">
+                        <div class="bg-slate-800 text-white px-3.5 py-2 font-bold text-xs uppercase tracking-wider">
+                            TAHAP 3: MENYUSUN JADWAL PELAKSANAAN (CREATE A SCHEDULE)
+                        </div>
+                        <div class="p-3.5">
+                            <table class="official-table text-xs">
+                                <thead>
+                                    <tr>
+                                        <th class="w-32 text-center">Waktu / Pertemuan</th>
+                                        <th>Tahapan Kegiatan Utama</th>
+                                        <th class="w-1/3">Target Output / Bukti Fisik</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="font-semibold text-center">Pertemuan 1</td>
+                                        <td contenteditable="true">Analisis masalah kontekstual, perumusan ide, dan penyusunan desain/proposal proyek</td>
+                                        <td contenteditable="true">Lembar rancangan kerja &amp; daftar kebutuhan bahan</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-semibold text-center">Pertemuan 2</td>
+                                        <td contenteditable="true">Persiapan alat, bahan baku, dan penerapan standar Keselamatan &amp; Kesehatan Kerja (K3)</td>
+                                        <td contenteditable="true">Kesiapan alat/bahan terverifikasi</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-semibold text-center">Pertemuan 3</td>
+                                        <td contenteditable="true">Proses inti pembuatan / perakitan / pengerjaan produk proyek sesuai SOP kejuruan</td>
+                                        <td contenteditable="true">Progres fisik produk minimal 60%</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-semibold text-center">Pertemuan 4</td>
+                                        <td contenteditable="true">Penyelesaian produk akhir (finishing), uji kelayakan mutu, dan perbaikan hasil uji</td>
+                                        <td contenteditable="true">Produk jadi &amp; data hasil pengujian</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-semibold text-center">Pertemuan 5</td>
+                                        <td contenteditable="true">Penyusunan laporan proyek, presentasi gelar karya, dan refleksi pembelajaran</td>
+                                        <td contenteditable="true">Laporan akhir, produk siap pamer &amp; presentasi</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tahap 4 -->
+                    <div class="lkpd-stage-box border border-slate-400 rounded-lg overflow-hidden">
+                        <div class="bg-slate-800 text-white px-3.5 py-2 font-bold text-xs uppercase tracking-wider">
+                            TAHAP 4: MEMONITOR KEMAJUAN PROYEK (MONITOR THE STUDENTS AND THE PROGRESS OF THE PROJECT)
+                        </div>
+                        <div class="p-3.5">
+                            <table class="official-table text-xs">
+                                <thead>
+                                    <tr>
+                                        <th class="w-24 text-center">Tanggal</th>
+                                        <th>Catatan Kemajuan / Aktivitas</th>
+                                        <th>Kendala yang Ditemukan</th>
+                                        <th>Solusi &amp; Paraf Guru</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td class="h-8" contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td></tr>
+                                    <tr><td class="h-8" contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td></tr>
+                                    <tr><td class="h-8" contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tahap 5 -->
+                    <div class="lkpd-stage-box border border-slate-400 rounded-lg overflow-hidden">
+                        <div class="bg-slate-800 text-white px-3.5 py-2 font-bold text-xs uppercase tracking-wider">
+                            TAHAP 5: MENGUJI HASIL &amp; PRESENTASI (ASSESS THE OUTCOME)
+                        </div>
+                        <div class="p-3.5 space-y-2">
+                            <p contenteditable="true" class="out-lkpdSintaks5 leading-relaxed"></p>
+                            <div contenteditable="true" class="min-h-[60px] border border-dashed border-slate-400 rounded p-2.5 text-slate-700">
+                                Ringkasan hasil pengujian fungsi/kualitas produk serta catatan masukan saat presentasi...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tahap 6 (7 Pertanyaan Refleksi Murid sesuai permintaan) -->
+                    <div class="lkpd-stage-box border border-slate-400 rounded-lg overflow-hidden">
+                        <div class="bg-slate-800 text-white px-3.5 py-2 font-bold text-xs uppercase tracking-wider">
+                            TAHAP 6: EVALUASI PENGALAMAN &amp; REFLEKSI (EVALUATE THE EXPERIENCE)
+                        </div>
+                        <div class="p-3.5 space-y-3 text-xs leading-relaxed">
+                            <div>
+                                <p class="font-bold text-slate-900">1. Lingkari angka yang paling menggambarkan pemahamanmu terhadap materi hari ini:</p>
+                                <p class="font-extrabold text-sm tracking-widest my-1 text-indigo-950">[ 1 &mdash; 2 &mdash; 3 &mdash; 4 &mdash; 5 ]</p>
+                                <p class="text-[11px] italic text-slate-600">(Keterangan: 1 = Belum paham sama sekali, 2 = Kurang paham, 3 = Cukup paham, 4 = Paham, 5 = Sangat paham dan bisa menjelaskan ke orang lain)</p>
+                            </div>
+                            <div>
+                                <p class="font-bold text-slate-900">2. Bagaimana perasaanmu selama mengikuti pembelajaran hari ini? (Boleh digambarkan dengan kata-kata atau emoji)</p>
+                                <div contenteditable="true" class="mt-1 min-h-[34px] border-b border-dotted border-slate-500 px-1 text-slate-700"></div>
+                            </div>
+                            <div>
+                                <p class="font-bold text-slate-900">3. 3 hal paling penting/baru yang benar-benar kamu pelajari dan pahami:</p>
+                                <div contenteditable="true" class="mt-1 min-h-[48px] border border-dashed border-slate-400 rounded p-2 text-slate-700">1) .......................... 2) .......................... 3) ..........................</div>
+                            </div>
+                            <div>
+                                <p class="font-bold text-slate-900">4. 2 hal/Bagian mana dari materi hari ini yang menurutmu paling sulit, dan mengapa:</p>
+                                <div contenteditable="true" class="mt-1 min-h-[42px] border border-dashed border-slate-400 rounded p-2 text-slate-700">1) .......................... 2) ..........................</div>
+                            </div>
+                            <div>
+                                <p class="font-bold text-slate-900">5. 1 hal/kendala yang masih membuat kamu bingung atau ingin kamu kembangkan:</p>
+                                <div contenteditable="true" class="mt-1 min-h-[34px] border-b border-dotted border-slate-500 px-1 text-slate-700"></div>
+                            </div>
+                            <div>
+                                <p class="font-bold text-slate-900">6. Apa kendala yang kamu hadapi saat belajar tadi, dan bagaimana kamu mencoba mengatasinya:</p>
+                                <div contenteditable="true" class="mt-1 min-h-[38px] border-b border-dotted border-slate-500 px-1 text-slate-700"></div>
+                            </div>
+                            <div>
+                                <p class="font-bold text-slate-900">7. Rangkum pelajaran hari ini maksimal dalam 280 karakter:</p>
+                                <div contenteditable="true" class="mt-1 min-h-[44px] border border-slate-300 rounded p-2 bg-slate-50 text-slate-700"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kotak Nilai dan Paraf Guru Mata Pelajaran (Pengganti TTD KS di Menu 2) -->
+                <div class="mt-6 flex justify-end signature-block">
+                    <table class="official-table text-xs w-72">
+                        <thead>
+                            <tr>
+                                <th class="w-1/2 text-center">Nilai</th>
+                                <th class="w-1/2 text-center">Paraf Guru Mata Pelajaran</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="h-16 text-center align-middle font-extrabold text-base"></td>
+                                <td class="h-16 text-center align-bottom text-[11px] text-slate-600 pb-1">
+                                    <span class="out-namaGuru font-semibold text-slate-900"></span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- =====================================================================
+             MENU 3: RUBRIK PENILAIAN PROYEK (SKALA 1-4 & DEEP LEARNING)
+             ===================================================================== -->
+        <div id="tab-rubrik" class="tab-content hidden">
+            <div class="document-sheet">
+                <div class="kop-surat-container"></div>
+
+                <div class="text-center mb-4">
+                    <h3 class="text-sm sm:text-base font-extrabold uppercase tracking-wide underline">
+                        RUBRIK PENILAIAN ASESMEN SUMATIF BERBASIS PROYEK
+                    </h3>
+                    <p class="text-xs font-semibold text-slate-700 mt-0.5">
+                        Mata Pelajaran: <span class="out-mapel"></span> • <span class="out-kelasFase"></span>
+                    </p>
+                </div>
+
+                <div class="table-responsive-wrapper overflow-x-auto">
+                    <table class="official-table text-xs">
+                        <thead>
+                            <tr>
+                                <th class="w-8 text-center">No</th>
+                                <th class="w-44">Kriteria / Aspek Penilaian</th>
+                                <th>Skor 1<br><span class="font-normal text-[11px]">(Belum Muncul)</span></th>
+                                <th>Skor 2<br><span class="font-normal text-[11px]">(Muncul Sebagian Kecil / Berkembang)</span></th>
+                                <th>Skor 3<br><span class="font-normal text-[11px]">(Muncul Sebagian Besar / Cakap)</span></th>
+                                <th>Skor 4<br><span class="font-normal text-[11px]">(Terlihat Keseluruhan / Mahir)</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="text-center font-bold">1</td>
+                                <td class="font-bold">Perencanaan &amp; Penguasaan Konsep (Pengetahuan)</td>
+                                <td contenteditable="true">Belum mampu merumuskan rancangan proyek dan tidak memahami konsep dasar kejuruan yang mendasari proyek.</td>
+                                <td contenteditable="true">Mampu menyusun rancangan proyek secara sederhana namun konsep teknis kejuruan masih kurang tepat dan perlu bimbingan.</td>
+                                <td contenteditable="true">Mampu menyusun perencanaan proyek secara sistematis, logis, dan menguasai sebagian besar konsep teknis kejuruan dengan tepat.</td>
+                                <td contenteditable="true">Mampu merancang proyek secara komprehensif, inovatif, efisien, dan menguasai seluruh konsep kejuruan secara mendalam.</td>
+                            </tr>
+                            <tr>
+                                <td class="text-center font-bold">2</td>
+                                <td class="font-bold">Proses Pelaksanaan &amp; Penerapan K3 (Keterampilan)</td>
+                                <td contenteditable="true">Belum mampu menggunakan peralatan kerja sesuai prosedur dan mengabaikan standar keselamatan kerja (K3).</td>
+                                <td contenteditable="true">Mampu melaksanakan sebagian kecil tahapan kerja namun penggunaan alat dan penerapan K3 masih kurang konsisten.</td>
+                                <td contenteditable="true">Mampu melaksanakan sebagian besar tahapan proyek sesuai SOP, terampil menggunakan alat, dan mematuhi prinsip K3.</td>
+                                <td contenteditable="true">Sangat terampil, presisi, efisien dalam seluruh tahapan produksi/kerja, serta menerapkan budaya K3 secara konsisten.</td>
+                            </tr>
+                            <tr>
+                                <td class="text-center font-bold">3</td>
+                                <td class="font-bold">Kualitas Produk / Hasil Proyek (Tagihan)</td>
+                                <td contenteditable="true">Produk/karya proyek belum selesai atau tidak berfungsi sesuai spesifikasi teknis yang ditetapkan.</td>
+                                <td contenteditable="true">Produk/karya selesai namun fungsi dan kerapiannya baru memenuhi sebagian kecil standar kelayakan.</td>
+                                <td contenteditable="true">Produk/karya berfungsi dengan baik, rapi, dan memenuhi sebagian besar standar mutu/spesifikasi proyek.</td>
+                                <td contenteditable="true">Produk/karya sangat berkualitas, berfungsi optimal, estetis/rapi, dan memiliki nilai guna/nilai jual tinggi.</td>
+                            </tr>
+                            <tr>
+                                <td class="text-center font-bold">4</td>
+                                <td class="font-bold">
+                                    8 Dimensi Profil Lulusan &amp; Komunikasi Laporan<br>
+                                    <span class="font-normal text-[11px] text-indigo-900 out-kompSikap"></span>
+                                </td>
+                                <td contenteditable="true">Belum menunjukkan kolaborasi, kemandirian, penalaran kritis, serta belum mampu mempresentasikan laporan proyek.</td>
+                                <td contenteditable="true">Menunjukkan sebagian kecil sikap kolaboratif dan tanggung jawab; laporan dan presentasi masih kurang runtut.</td>
+                                <td contenteditable="true">Aktif berkolaborasi, bernalar kritis dalam mengatasi kendala, serta menyampaikan laporan dan presentasi dengan jelas.</td>
+                                <td contenteditable="true">Menunjukkan keteladanan 8 Dimensi Profil Lulusan secara utuh, argumentatif, komunikatif, dan reflektif saat presentasi.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="signature-container"></div>
+            </div>
+        </div>
+
+        <!-- =====================================================================
+             MENU 4: INSTRUMEN ASESMEN MANUAL (CEKLIS OBSERVASI 1-4)
+             ===================================================================== -->
+        <div id="tab-manual" class="tab-content hidden">
+            <div class="document-sheet">
+                <div class="kop-surat-container"></div>
+
+                <div class="text-center mb-4">
+                    <h3 class="text-sm sm:text-base font-extrabold uppercase tracking-wide underline">
+                        DAFTAR ASESMEN SUMATIF
+                    </h3>
+                    <p class="text-xs font-semibold text-slate-700 mt-0.5">INSTRUMEN OBSERVASI PENILAIAN PROYEK (SKALA 1–4)</p>
+                </div>
+
+                <!-- Identitas Atas Tabel -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1 text-xs mb-4 bg-slate-50 p-3 rounded-lg border border-slate-300">
+                    <div><strong>Mata Pelajaran:</strong> <span class="out-mapel"></span></div>
+                    <div><strong>Kelas / Fase:</strong> <span class="out-kelasFase"></span></div>
+                    <div><strong>Kompetensi Keahlian:</strong> <span class="out-kompetensiKeahlian"></span></div>
+                    <div><strong>Semester / TP:</strong> <span class="out-semester"></span> / <span class="out-tahunPelajaran"></span></div>
+                    <div class="sm:col-span-2"><strong>Tema / Judul Proyek:</strong> <span class="out-temaProyek"></span></div>
+                </div>
+
+                <!-- Toolbar Kontrol Tabel (No-Print) -->
+                <div class="no-print flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <p class="text-xs text-slate-600">Klik kotak skor (<strong>1, 2, 3, atau 4</strong>) pada setiap kriteria untuk mencentang penilaian:</p>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button type="button" onclick="addStudentRow()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white transition">
+                            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Tambah Siswa
+                        </button>
+                        <button type="button" onclick="clearManualTableScores()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white transition">
+                            <i data-lucide="eraser" class="w-3.5 h-3.5"></i> Hapus Isian Tabel
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tabel Ceklis Observasi -->
+                <div class="table-responsive-wrapper overflow-x-auto">
+                    <table class="official-table text-xs">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" class="w-8 text-center">No</th>
+                                <th rowspan="2" class="min-w-[160px]">NAMA PESERTA DIDIK</th>
+                                <th colspan="4" class="text-center">Kriteria 1<br><span class="font-normal text-[10px]">(Perencanaan)</span></th>
+                                <th colspan="4" class="text-center">Kriteria 2<br><span class="font-normal text-[10px]">(Pelaksanaan)</span></th>
+                                <th colspan="4" class="text-center">Kriteria 3<br><span class="font-normal text-[10px]">(Produk/Hasil)</span></th>
+                                <th colspan="4" class="text-center">Kriteria 4<br><span class="font-normal text-[10px]">(Sikap/Laporan)</span></th>
+                                <th rowspan="2" class="w-12 text-center">SKOR</th>
+                                <th rowspan="2" class="w-14 text-center">SKOR MAKS</th>
+                                <th rowspan="2" class="w-16 text-center">PERSEN (%)</th>
+                                <th rowspan="2" class="min-w-[150px]">Keterangan Intervensi / Tindak Lanjut</th>
+                            </tr>
+                            <tr>
+                                <th class="w-6 text-center">1</th><th class="w-6 text-center">2</th><th class="w-6 text-center">3</th><th class="w-6 text-center">4</th>
+                                <th class="w-6 text-center">1</th><th class="w-6 text-center">2</th><th class="w-6 text-center">3</th><th class="w-6 text-center">4</th>
+                                <th class="w-6 text-center">1</th><th class="w-6 text-center">2</th><th class="w-6 text-center">3</th><th class="w-6 text-center">4</th>
+                                <th class="w-6 text-center">1</th><th class="w-6 text-center">2</th><th class="w-6 text-center">3</th><th class="w-6 text-center">4</th>
+                            </tr>
+                        </thead>
+                        <tbody id="manual-table-body">
+                            <!-- Diisi via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="signature-container"></div>
+            </div>
+        </div>
+
+        <!-- =====================================================================
+             MENU 5: INPUT LAPORAN NILAI SUMATIF (REKAPITULASI & PREDIKAT)
+             ===================================================================== -->
+        <div id="tab-nilai" class="tab-content hidden">
+            <div class="document-sheet">
+                <div class="kop-surat-container"></div>
+
+                <div class="text-center mb-4">
+                    <h3 class="text-sm sm:text-base font-extrabold uppercase tracking-wide underline">
+                        LAPORAN REKAPITULASI NILAI ASESMEN SUMATIF PROYEK
+                    </h3>
+                    <p class="text-xs font-semibold text-slate-700 mt-0.5">
+                        Mata Pelajaran: <span class="out-mapel"></span> • <span class="out-kelasFase"></span>
+                    </p>
+                </div>
+
+                <div class="no-print flex items-center justify-between mb-3">
+                    <p class="text-xs text-slate-600">Nilai tersinkronisasi otomatis dengan <strong>Menu 4 (Instrumen Asesmen Manual)</strong>. Anda juga dapat mengubah skor 1–4 langsung di tabel ini:</p>
+                    <button type="button" onclick="addStudentRow()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white transition">
+                        <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Tambah Siswa
+                    </button>
+                </div>
+
+                <div class="table-responsive-wrapper overflow-x-auto">
+                    <table class="official-table text-xs">
+                        <thead>
+                            <tr>
+                                <th class="w-8 text-center">No</th>
+                                <th class="min-w-[170px]">Nama Peserta Didik</th>
+                                <th class="w-16 text-center">K1<br><span class="font-normal text-[10px]">(1–4)</span></th>
+                                <th class="w-16 text-center">K2<br><span class="font-normal text-[10px]">(1–4)</span></th>
+                                <th class="w-16 text-center">K3<br><span class="font-normal text-[10px]">(1–4)</span></th>
+                                <th class="w-16 text-center">K4<br><span class="font-normal text-[10px]">(1–4)</span></th>
+                                <th class="w-14 text-center">SKOR</th>
+                                <th class="w-16 text-center">SKOR MAKS</th>
+                                <th class="w-20 text-center bg-indigo-50">NILAI AKHIR</th>
+                                <th class="min-w-[150px]">Keterangan Ketuntasan</th>
+                                <th class="min-w-[160px]">Tindak Lanjut</th>
+                            </tr>
+                        </thead>
+                        <tbody id="nilai-table-body">
+                            <!-- Diisi via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Keterangan Skala / Interval Ketuntasan -->
+                <div class="mt-4 bg-slate-50 border border-slate-300 rounded-lg p-3 text-xs">
+                    <p class="font-bold text-slate-900 mb-1.5">Keterangan Interval Kriteria Ketercapaian Tujuan Pembelajaran (KKTP):</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-slate-800">
+                        <div>• <strong>0 – 59</strong> : Belum mencapai, remedial di seluruh bagian.</div>
+                        <div>• <strong>60 – 69</strong> : Belum mencapai ketuntasan, remedial di bagian yang diperlukan.</div>
+                        <div>• <strong>70 – 89</strong> : Sudah mencapai ketuntasan, tidak perlu remedial.</div>
+                        <div>• <strong>90 – 100</strong> : Sudah mencapai ketuntasan, perlu pengayaan.</div>
+                    </div>
+                </div>
+
+                <div class="signature-container"></div>
+            </div>
+        </div>
+
+        <!-- =====================================================================
+             MENU 6: REFLEKSI GURU
+             ===================================================================== -->
+        <div id="tab-refleksi" class="tab-content hidden">
+            <div class="document-sheet">
+                <div class="kop-surat-container"></div>
+
+                <div class="text-center mb-4">
+                    <h3 class="text-sm sm:text-base font-extrabold uppercase tracking-wide underline">
+                        LEMBAR REFLEKSI GURU PASCA-PEMBELAJARAN PROYEK (PjBL)
+                    </h3>
+                    <p class="text-xs font-semibold text-slate-700 mt-0.5">TAHUN PELAJARAN <span class="out-tahunPelajaran">2025/2026</span></p>
+                </div>
+
+                <!-- Identitas Pembelajaran -->
+                <table class="official-table text-xs mb-4">
+                    <tbody>
+                        <tr>
+                            <td class="w-1/4 font-bold bg-slate-50">Nama Guru</td>
+                            <td class="w-1/4 out-namaGuru"></td>
+                            <td class="w-1/4 font-bold bg-slate-50">Mata Pelajaran</td>
+                            <td class="w-1/4 out-mapel"></td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold bg-slate-50">Kelas / Fase</td>
+                            <td class="out-kelasFase"></td>
+                            <td class="font-bold bg-slate-50">Semester</td>
+                            <td class="out-semester"></td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold bg-slate-50">Tema / Judul Proyek</td>
+                            <td colspan="3" class="font-bold out-temaProyek"></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Tabel Pertanyaan Refleksi Guru -->
+                <div class="table-responsive-wrapper overflow-x-auto">
+                    <table class="official-table text-xs sm:text-sm">
+                        <thead>
+                            <tr>
+                                <th class="w-10 text-center">No</th>
+                                <th class="w-1/3 text-left">Aspek &amp; Pertanyaan Refleksi Guru</th>
+                                <th class="text-left">Catatan Refleksi, Temuan Lapangan &amp; Tindak Lanjut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="text-center font-bold">1</td>
+                                <td>
+                                    <p class="font-bold text-slate-900">Efektivitas Proses:</p>
+                                    <p class="italic text-slate-700 mt-1">"Apa bagian dari pembelajaran hari ini yang berjalan paling baik, dan apa buktinya murid-murid paham?"</p>
+                                </td>
+                                <td contenteditable="true" data-refleksi="q1" class="out-refleksiQ1 min-h-[90px] h-24 leading-relaxed text-slate-800">Klik di sini untuk menuliskan bagian pembelajaran proyek yang berjalan paling efektif beserta bukti pemahaman murid...</td>
+                            </tr>
+                            <tr>
+                                <td class="text-center font-bold">2</td>
+                                <td>
+                                    <p class="font-bold text-slate-900">Kekurangan:</p>
+                                    <p class="italic text-slate-700 mt-1">"Strategi atau penjelasan mana yang kurang efektif hari ini, dan di bagian mana banyak murid terlihat bingung?"</p>
+                                </td>
+                                <td contenteditable="true" data-refleksi="q2" class="out-refleksiQ2 min-h-[90px] h-24 leading-relaxed text-slate-800">Klik di sini untuk menuliskan strategi/penjelasan yang kurang efektif dan titik kesulitan murid...</td>
+                            </tr>
+                            <tr>
+                                <td class="text-center font-bold">3</td>
+                                <td>
+                                    <p class="font-bold text-slate-900">Keterlibatan Murid:</p>
+                                    <p class="italic text-slate-700 mt-1">"Siapa murid yang, menurut pengamatan saya, kurang terlibat hari ini? Apa yang mungkin sedang mereka rasakan atau butuhkan?"</p>
+                                </td>
+                                <td contenteditable="true" data-refleksi="q3" class="out-refleksiQ3 min-h-[90px] h-24 leading-relaxed text-slate-800">Klik di sini untuk mencatat pengamatan keterlibatan murid dan kebutuhan pendampingan individual...</td>
+                            </tr>
+                            <tr>
+                                <td class="text-center font-bold">4</td>
+                                <td>
+                                    <p class="font-bold text-slate-900">Rencana Perbaikan:</p>
+                                    <p class="italic text-slate-700 mt-1">"Apa satu hal spesifik yang akan saya ubah atau lakukan berbeda pada pertemuan berikutnya?"</p>
+                                </td>
+                                <td contenteditable="true" data-refleksi="q4" class="out-refleksiQ4 min-h-[90px] h-24 leading-relaxed text-slate-800">Klik di sini untuk menuliskan langkah perbaikan spesifik pada pertemuan proyek berikutnya...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Tanda Tangan Kepala Sekolah dan Guru Mata Pelajaran -->
+                <div class="signature-container"></div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer Aplikasi dengan Footnote Resmi -->
+    <footer class="no-print bg-white border-t border-slate-200 py-4 px-4 text-center text-xs text-slate-500 mt-auto">
+        <p class="font-semibold text-slate-700">SI-ASESMEN PjBL • SMK Negeri 1 Amarasi Selatan</p>
+        <p class="mt-0.5 text-indigo-700 font-medium">imanuelmaniyeni51@guru.smk.belajar.id</p>
+    </footer>
+
+    <!-- =========================================================================
+         TEMPLATE KOP SURAT RESMI & BLOK TANDA TANGAN + LOGIKA JAVASCRIPT
+         ========================================================================= -->
+    <script>
+        // SVG Data URI Presisi Tinggi untuk Logo Provinsi NTT & Logo SMK Negeri 1 Amarasi Selatan
+        const SVG_LOGO_NTT = "data:image/svg+xml;utf8," + encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220" width="200" height="220">
+                <path d="M25,20 Q100,5 175,20 L185,115 Q175,180 100,210 Q25,180 15,115 Z" fill="#dc2626" stroke="#1e293b" stroke-width="6"/>
+                <path d="M16,95 L184,135 Q170,185 100,210 Q25,180 16,115 Z" fill="#facc15" stroke="#1e293b" stroke-width="3"/>
+                <polygon points="100,22 104,34 117,34 107,41 111,53 100,46 89,53 93,41 83,34 96,34" fill="#fde047"/>
+                <path d="M45,62 Q100,45 155,62 L150,76 Q100,60 50,76 Z" fill="#ffffff" stroke="#1e293b" stroke-width="2"/>
+                <text x="100" y="67" font-family="Arial, sans-serif" font-size="8.5" font-weight="bold" text-anchor="middle" fill="#0f172a">NUSA TENGGARA TIMUR</text>
+                <ellipse cx="102" cy="96" rx="34" ry="11" fill="#ffffff" stroke="#1e293b" stroke-width="2.5"/>
+                <path d="M68,96 Q48,92 52,106 Q56,115 78,110" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round"/>
+                <circle cx="136" cy="92" r="9" fill="#ffffff" stroke="#1e293b" stroke-width="2"/>
+                <circle cx="100" cy="132" r="14" fill="#15803d"/>
+                <rect x="97" y="142" width="6" height="14" fill="#78350f"/>
+                <path d="M40,95 Q52,145 112,178" fill="none" stroke="#ca8a04" stroke-width="6" stroke-linecap="round"/>
+                <path d="M160,95 Q148,145 88,178" fill="none" stroke="#16a34a" stroke-width="6" stroke-linecap="round"/>
+                <circle cx="152" cy="108" r="5" fill="#ffffff" stroke="#15803d" stroke-width="2"/>
+                <circle cx="145" cy="125" r="5" fill="#ffffff" stroke="#15803d" stroke-width="2"/>
+                <circle cx="134" cy="142" r="5" fill="#ffffff" stroke="#15803d" stroke-width="2"/>
+                <text x="100" y="194" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#0f172a">1958</text>
+            </svg>
+        `);
+
+        const SVG_LOGO_SMK = "data:image/svg+xml;utf8," + encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220" width="200" height="220">
+                <path d="M35,14 L165,14 Q170,35 190,42 L182,135 Q165,185 100,210 Q35,185 18,135 L10,42 Q30,35 35,14 Z" fill="#0ea5e9" stroke="#0f172a" stroke-width="6"/>
+                <text x="100" y="42" font-family="Arial, sans-serif" font-size="15.5" font-weight="900" text-anchor="middle" fill="#0f172a">SMK NEGERI 1</text>
+                <text x="100" y="60" font-family="Arial, sans-serif" font-size="12.5" font-weight="800" text-anchor="middle" fill="#0f172a">AMARASI SELATAN</text>
+                <circle cx="100" cy="104" r="30" fill="#1d4ed8" stroke="#ffffff" stroke-width="2"/>
+                <ellipse cx="100" cy="104" rx="14" ry="30" fill="none" stroke="#93c5fd" stroke-width="1.5"/>
+                <line x1="70" y1="104" x2="130" y2="104" stroke="#93c5fd" stroke-width="1.5"/>
+                <rect x="86" y="92" width="26" height="18" rx="2" fill="#334155" stroke="#f8fafc" stroke-width="1.5"/>
+                <rect x="94" y="110" width="10" height="4" fill="#cbd5e1"/>
+                <path d="M26,75 Q22,125 56,148 Q64,135 50,115 Q42,95 26,75 Z" fill="#fde047" stroke="#ca8a04" stroke-width="1.5"/>
+                <path d="M174,75 Q178,125 144,148 Q136,135 150,115 Q158,95 174,75 Z" fill="#fde047" stroke="#ca8a04" stroke-width="1.5"/>
+                <path d="M64,158 Q82,150 100,158 Q118,150 136,158 L136,168 Q118,160 100,168 Q82,160 64,168 Z" fill="#ffffff" stroke="#0f172a" stroke-width="1.5"/>
+                <text x="100" y="188" font-family="Arial, sans-serif" font-size="12.5" font-weight="800" text-anchor="middle" fill="#0f172a">KAB. KUPANG</text>
+            </svg>
+        `);
+
+        const DIMENSI_LIST = [
+            "Keimanan dan Ketakwaan terhadap Tuhan YME",
+            "Kewargaan",
+            "Penalaran Kritis",
+            "Kreativitas",
+            "Kolaborasi",
+            "Kemandirian",
+            "Kesehatan",
+            "Komunikasi"
+        ];
+
+        const defaultState = {
+            logoKiri: "BUILTIN_NTT",
+            logoKanan: "BUILTIN_SMK",
+            mapel: "Agribisnis Tanaman Pangan dan Hortikultura",
+            kompetensiKeahlian: "Agribisnis Tanaman",
+            kelasFase: "Kelas XI / Fase F (Kurikulum Merdeka - Kep. BSKAP 046/H/KR/2025)",
+            semester: "Genap",
+            tahunPelajaran: "2025/2026",
+            namaGuru: "Imanuel Maniyeni, S.Pd.",
+            nipGuru: "19880512 201503 1 004",
+            tempatTanggalPengesahan: "Retraen, 15 Mei 2026",
+            temaProyek: "Rancang Bangun Sistem Hidroponik Sederhana Berbasis Limbah Lokal Hemat Air",
+            lintasDisiplin: "Projek IPAS, Matematika Terapan, Produk Kreatif & Kewirausahaan",
+            alokasiWaktu: "5 Pertemuan (20 JP x 45 Menit)",
+            bentukProyek: "Proyek Kolaboratif Kelompok (3–5 Peserta Didik per Tim)",
+            tagihanProyek: "Unit Sistem / Instalasi / Budidaya Nyata, Laporan Teknis & Presentasi",
+            karakteristikMurid: "Konteks Lokal & Agraris (Mayoritas berasal dari lingkungan pertanian/peternakan Amarasi Selatan, kuat pada praktik lapangan & gotong royong, membutuhkan penguatan literasi teknis dan penyusunan laporan sistematis)",
+            capaianPembelajaran: "Peserta didik mampu merencanakan, melaksanakan, dan mengevaluasi budidaya tanaman hortikultura menggunakan teknologi pertanian hemat air secara mandiri, aman (sesuai K3), dan berorientasi kewirausahaan.",
+            tujuanProyek: "Melalui pembelajaran berbasis proyek, peserta didik mampu merancang instalasi hidroponik hemat air berbasis limbah lokal, menghitung kebutuhan nutrisi, memelihara tanaman hingga panen, serta menyusun laporan analisis usaha secara kolaboratif.",
+            selectedDimensi: ["Penalaran Kritis", "Kreativitas", "Kolaborasi", "Kemandirian", "Komunikasi"],
+            materiProyek: "1. Konsep Dasar Hidroponik Sistem Wick & NFT Sederhana; 2. Pemanfaatan Limbah Lokal & Perhitungan Debit/Nutrisi AB Mix; 3. Penerapan K3 Pertanian & Pengendalian Hama Terpadu; 4. Analisis Biaya Produksi dan Pemasaran Hasil Panen.",
+            kompPengetahuan: "Menganalisis prinsip kerja sistem hidroponik hemat air, formulasi nutrisi tanaman, dan kelayakan usaha agribisnis.",
+            kompKeterampilan: "Merakit instalasi hidroponik sesuai gambar kerja, menerapkan SOP K3, melakukan pemeliharaan tanaman, dan menyusun laporan proyek.",
+            deskripsiTugas: "Peserta didik secara berkelompok merancang dan membuat 1 unit instalasi hidroponik sederhana memanfaatkan bahan lokal/daur ulang di lingkungan sekolah, membudidayakan tanaman sayuran daun hingga layak panen, menguji kualitas pertumbuhan, serta mempresentasikan laporan teknis dan analisis usahanya.",
+            tahapanPelaksanaan: "1. Perencanaan (Pertemuan 1–2): Analisis masalah, desain sketsa, RAB, dan persiapan alat/bahan; 2. Pelaksanaan (Pertemuan 3–4): Perakitan instalasi, penanaman bibit, pemeliharaan nutrisi, dan monitoring K3; 3. Pelaporan (Pertemuan 5): Pengujian hasil panen, penyusunan laporan akhir, dan presentasi gelar karya.",
+            kriteriaPenilaian: "1. Perencanaan & Penguasaan Konsep (25%); 2. Proses Pelaksanaan & K3 (25%); 3. Kualitas Produk Instalasi & Tanaman (25%); 4. Sikap/8 Dimensi Profil Lulusan & Presentasi Laporan (25%).",
+            instrumenPenilaian: "Lembar Observasi Ceklis Kinerja Proyek (Skala 1–4), Rubrik Penilaian Produk & Presentasi, serta Lembar Refleksi Diri.",
+            sumberBelajar: "Modul Ajar Fase F Kemendikdasmen, Buku Teks Agribisnis Tanaman Hortikultura SMK, SOP K3 Pertanian, dan Lingkungan Kebun Praktik SMK Negeri 1 Amarasi Selatan.",
+            lainLain: "Peserta didik wajib menggunakan Alat Pelindung Diri (APD) standar selama praktik di bengkel/lahan sekolah.",
+            lkpdSintaks1: "Wilayah Amarasi Selatan memiliki potensi pertanian yang besar, namun pada musim kemarau ketersediaan air bersih dan kesuburan lahan menjadi tantangan utama budidaya sayuran segar. Di sisi lain, banyak limbah botol plastik dan pipa bekas di sekitar sekolah yang belum dimanfaatkan. Bagaimana kelompok Anda dapat merancang sistem budidaya hidroponik hemat air berbasis limbah lokal yang produktif dan bernilai jual?",
+            lkpdSintaks2: "Diskusikan bersama kelompok Anda langkah kerja perakitan proyek, pembagian peran setiap anggota, serta daftar alat dan bahan dengan memperhatikan prinsip efisiensi biaya dan keselamatan kerja (K3).",
+            lkpdSintaks5: "Ujilah instalasi hidroponik yang telah kelompok Anda buat (uji kebocoran, kelancaran sirkulasi nutrisi, dan kondisi kesehatan bibit tanaman), kemudian presentasikan hasil karya dan laporan proyek Anda di depan kelas.",
+            refleksiQ1: "Klik di sini untuk menuliskan bagian pembelajaran proyek yang berjalan paling efektif beserta bukti pemahaman murid...",
+            refleksiQ2: "Klik di sini untuk menuliskan strategi/penjelasan yang kurang efektif dan titik kesulitan murid...",
+            refleksiQ3: "Klik di sini untuk mencatat pengamatan keterlibatan murid dan kebutuhan pendampingan individual...",
+            refleksiQ4: "Klik di sini untuk menuliskan langkah perbaikan spesifik pada pertemuan proyek berikutnya...",
+            students: [
+                { id: 1, name: "Andreas Taneo", scores: [4, 4, 3, 4] },
+                { id: 2, name: "Beatrix Nenobais", scores: [3, 4, 4, 3] },
+                { id: 3, name: "Christian Kase", scores: [3, 3, 3, 3] },
+                { id: 4, name: "Desiana Benu", scores: [4, 4, 4, 4] },
+                { id: 5, name: "Emanuel Lopo", scores: [2, 3, 2, 2] },
+                { id: 6, name: "Febriana Tefa", scores: [2, 2, 2, 2] }
+            ]
+        };
+
+        // =========================================================================
+        // KONFIGURASI CLOUD FIRESTORE & MANAJEMEN SESI MULTI-GURU (100 GURU)
+        // =========================================================================
+        let db = null;
+        let auth = null;
+        let fbUser = null;
+        let isCloudReady = false;
+        let currentSessionRole = null; // 'guru' | 'admin'
+        let currentTeacherDocId = null;
+        let isAdminInspecting = false;
+        let allTeachersRecords = [];
+        let saveDebounceTimer = null;
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'si-asesmen-pjbl-smkn1-amarsel';
+
+        function slugifyKey(text) {
+            return (text || '')
+                .toLowerCase()
+                .trim()
+                .replace(/[^a-z0-9]+/g, '_')
+                .replace(/^_+|_+$/g, '') || 'default';
+        }
+
+        function buildTeacherDocId(namaGuru, mapel) {
+            return `${slugifyKey(namaGuru)}__${slugifyKey(mapel)}`;
+        }
+
+        // Menghitung kelengkapan progres 6 menu secara otomatis dari state guru
+        function evaluateSixMenusProgress(stateObj) {
+            const st = stateObj || {};
+            // Menu 1: Kisi-Kisi Sumatif (Parameter inti & capaian terisi)
+            const m1 = Boolean(
+                (st.namaGuru || '').trim().length > 2 &&
+                (st.mapel || '').trim().length > 2 &&
+                (st.temaProyek || '').trim().length > 5 &&
+                (st.capaianPembelajaran || '').trim().length > 10 &&
+                (st.tujuanProyek || '').trim().length > 10
+            );
+
+            // Menu 2: LKPD Proyek (6 Sintaks terisi)
+            const m2 = Boolean(
+                (st.lkpdSintaks1 || '').trim().length > 15 &&
+                (st.lkpdSintaks2 || '').trim().length > 10 &&
+                (st.lkpdSintaks5 || '').trim().length > 10
+            );
+
+            // Menu 3: Rubrik Penilaian (Dimensi & Kriteria terisi)
+            const m3 = Boolean(
+                Array.isArray(st.selectedDimensi) && st.selectedDimensi.length >= 2 &&
+                (st.kriteriaPenilaian || '').trim().length > 10
+            );
+
+            // Menu 4: Instrumen Asesmen Manual (Ada minimal 1 siswa & minimal 1 skor terisi > 0)
+            const studentsList = Array.isArray(st.students) ? st.students : [];
+            const hasScoredStudent = studentsList.some(s => Array.isArray(s.scores) && s.scores.some(v => Number(v) > 0));
+            const m4 = studentsList.length > 0 && hasScoredStudent;
+
+            // Menu 5: Input Laporan Nilai Sumatif (Semua siswa terdaftar sudah memiliki skor lengkap 4 kriteria)
+            const allStudentsComplete = studentsList.length > 0 && studentsList.every(s => Array.isArray(s.scores) && s.scores.length === 4 && s.scores.every(v => Number(v) > 0));
+            const m5 = allStudentsComplete;
+
+            // Menu 6: Refleksi Guru (Minimal 2 jawaban refleksi guru sudah diisi menggantikan placeholder)
+            const placeholders = [
+                "Klik di sini untuk menuliskan bagian pembelajaran proyek yang berjalan paling efektif beserta bukti pemahaman murid...",
+                "Klik di sini untuk menuliskan strategi/penjelasan yang kurang efektif dan titik kesulitan murid...",
+                "Klik di sini untuk mencatat pengamatan keterlibatan murid dan kebutuhan pendampingan individual...",
+                "Klik di sini untuk menuliskan langkah perbaikan spesifik pada pertemuan proyek berikutnya..."
+            ];
+            const qVals = [st.refleksiQ1, st.refleksiQ2, st.refleksiQ3, st.refleksiQ4].map(v => (v || '').trim());
+            const filledRefleksiCount = qVals.filter(v => v.length > 5 && !placeholders.includes(v)).length;
+            const m6 = filledRefleksiCount >= 2;
+
+            const completedCount = [m1, m2, m3, m4, m5, m6].filter(Boolean).length;
+            const percentage = Math.round((completedCount / 6) * 100);
+
+            return { m1, m2, m3, m4, m5, m6, completedCount, percentage };
+        }
+
+        async function initFirebaseCloud() {
+            const pill = document.getElementById('cloud-status-pill');
+            try {
+                if (typeof __firebase_config === 'undefined' || !window.fbModules) {
+                    throw new Error("Mode penyimpanan lokal cadangan aktif.");
+                }
+                const firebaseConfig = JSON.parse(__firebase_config);
+                const { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, getFirestore, collection, onSnapshot } = window.fbModules;
+
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                fbUser = auth.currentUser;
+                isCloudReady = true;
+
+                if (pill) {
+                    pill.className = "mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-200 border border-emerald-400/30";
+                    pill.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span><span>Server Cloud Terhubung (Siap 100 Guru)</span>`;
+                }
+
+                // Subscribe real-time ke seluruh data perangkat guru di Firestore
+                const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'perangkat_guru_pjbl');
+                onSnapshot(colRef, (snapshot) => {
+                    const records = [];
+                    snapshot.forEach(docSnap => {
+                        records.push({ id: docSnap.id, ...docSnap.data() });
+                    });
+                    allTeachersRecords = records.sort((a, b) => (a.namaGuru || '').localeCompare(b.namaGuru || ''));
+                    updateLoginDatalists();
+                    if (currentSessionRole === 'admin') {
+                        renderAdminMonitoringTable();
+                    }
+                }, (err) => {
+                    console.error("Firestore listener error:", err);
+                });
+            } catch (err) {
+                console.warn("Fallback ke LocalStorage Multi-Akun:", err);
+                isCloudReady = false;
+                if (pill) {
+                    pill.className = "mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-indigo-500/20 text-indigo-200 border border-indigo-400/30";
+                    pill.innerHTML = `<span class="w-2 h-2 rounded-full bg-indigo-400"></span><span>Penyimpanan Perangkat Aktif</span>`;
+                }
+                loadLocalFallbackRegistry();
+            }
+        }
+
+        function loadLocalFallbackRegistry() {
+            try {
+                const raw = localStorage.getItem('smk_pjbl_multi_registry_v1');
+                const mapObj = raw ? JSON.parse(raw) : {};
+                allTeachersRecords = Object.values(mapObj).sort((a, b) => (a.namaGuru || '').localeCompare(b.namaGuru || ''));
+                updateLoginDatalists();
+            } catch (e) {
+                allTeachersRecords = [];
+            }
+        }
+
+        function updateLoginDatalists() {
+            const teacherList = document.getElementById('registered-teachers-list');
+            const mapelList = document.getElementById('registered-mapel-list');
+            if (!teacherList || !mapelList) return;
+
+            const uniqueNames = [...new Set(allTeachersRecords.map(r => r.namaGuru).filter(Boolean))];
+            const uniqueMapels = [...new Set(allTeachersRecords.map(r => r.mapel).filter(Boolean))];
+
+            teacherList.innerHTML = uniqueNames.map(n => `<option value="${n}">`).join('');
+            mapelList.innerHTML = uniqueMapels.map(m => `<option value="${m}">`).join('');
+        }
+
+        function switchLoginRole(role) {
+            const btnGuru = document.getElementById('tab-login-guru');
+            const btnAdmin = document.getElementById('tab-login-admin');
+            const formGuru = document.getElementById('form-login-guru');
+            const formAdmin = document.getElementById('form-login-admin');
+
+            if (role === 'guru') {
+                btnGuru.className = "py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold bg-indigo-600 text-white shadow-sm transition flex items-center justify-center gap-2";
+                btnAdmin.className = "py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-200/70 transition flex items-center justify-center gap-2";
+                formGuru.classList.remove('hidden');
+                formAdmin.classList.add('hidden');
+            } else {
+                btnAdmin.className = "py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold bg-emerald-600 text-white shadow-sm transition flex items-center justify-center gap-2";
+                btnGuru.className = "py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-200/70 transition flex items-center justify-center gap-2";
+                formAdmin.classList.remove('hidden');
+                formGuru.classList.add('hidden');
+            }
+        }
+
+        async function handleGuruLogin(e) {
+            e.preventDefault();
+            const namaGuru = document.getElementById('login-nama-guru').value.trim();
+            const mapel = document.getElementById('login-mapel-guru').value.trim();
+            const nipGuru = document.getElementById('login-nip-guru').value.trim();
+
+            if (!namaGuru || !mapel) {
+                showToast("Nama Guru dan Mata Pelajaran wajib diisi.", "error");
+                return;
+            }
+
+            const btn = document.getElementById('btn-submit-guru');
+            const origHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Memuat Data Guru...</span>`;
+            if (window.lucide) lucide.createIcons();
+
+            const docId = buildTeacherDocId(namaGuru, mapel);
+            currentTeacherDocId = docId;
+            currentSessionRole = 'guru';
+            isAdminInspecting = false;
+
+            let loadedState = null;
+
+            try {
+                if (isCloudReady && db && fbUser) {
+                    const { doc, getDoc } = window.fbModules;
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'perangkat_guru_pjbl', docId);
+                    const snap = await getDoc(docRef);
+                    if (snap.exists() && snap.data().stateData) {
+                        loadedState = snap.data().stateData;
+                    }
+                } else {
+                    const raw = localStorage.getItem('smk_pjbl_multi_registry_v1');
+                    const mapObj = raw ? JSON.parse(raw) : {};
+                    if (mapObj[docId] && mapObj[docId].stateData) {
+                        loadedState = mapObj[docId].stateData;
+                    }
+                }
+            } catch (err) {
+                console.warn("Gagal mengambil data lama:", err);
+            }
+
+            if (loadedState) {
+                appState = { ...JSON.parse(JSON.stringify(defaultState)), ...loadedState };
+                appState.namaGuru = namaGuru;
+                appState.mapel = mapel;
+                if (nipGuru) appState.nipGuru = nipGuru;
+                showToast(`Selamat datang kembali, ${namaGuru}! Perangkat mapel Anda berhasil dipulihkan.`);
+            } else {
+                appState = JSON.parse(JSON.stringify(defaultState));
+                appState.namaGuru = namaGuru;
+                appState.mapel = mapel;
+                appState.nipGuru = nipGuru || "-";
+                showToast(`Ruang kerja baru dibuat untuk ${namaGuru} (${mapel}).`);
+            }
+
+            if (!appState.logoKiri || appState.logoKiri.includes('wikimedia.org') || appState.logoKiri.includes('placehold.co')) {
+                appState.logoKiri = 'BUILTIN_NTT';
+            }
+            if (!appState.logoKanan || appState.logoKanan.includes('placehold.co')) {
+                appState.logoKanan = 'BUILTIN_SMK';
+            }
+
+            // Simpan segera agar terdaftar langsung di monitoring Wakabid Kurikulum
+            await persistTeacherRecord(true);
+
+            // Tampilkan Workspace Guru
+            document.getElementById('auth-overlay').classList.add('hidden');
+            document.getElementById('admin-dashboard-panel').classList.add('hidden');
+            document.getElementById('workspace-main').classList.remove('hidden');
+            document.getElementById('btn-toggle-param').classList.remove('hidden');
+            document.getElementById('btn-export-pdf').classList.remove('hidden');
+            document.getElementById('btn-back-to-admin').classList.add('hidden');
+
+            const badge = document.getElementById('active-session-badge');
+            badge.textContent = `${namaGuru} • ${mapel}`;
+            badge.classList.remove('hidden');
+            document.getElementById('sync-indicator').classList.remove('hidden');
+
+            renderDimensiCheckboxes();
+            syncAllDOM();
+            renderAssessmentTables();
+
+            btn.disabled = false;
+            btn.innerHTML = origHTML;
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function handleAdminLogin(e) {
+            e.preventDefault();
+            const passInput = document.getElementById('login-admin-password').value;
+            const errEl = document.getElementById('admin-login-error');
+
+            if (passInput !== 'admin123#') {
+                errEl.classList.remove('hidden');
+                showToast("Kata sandi Admin Wakabid Kurikulum tidak valid!", "error");
+                return;
+            }
+
+            errEl.classList.add('hidden');
+            currentSessionRole = 'admin';
+            isAdminInspecting = false;
+
+            document.getElementById('auth-overlay').classList.add('hidden');
+            document.getElementById('workspace-main').classList.add('hidden');
+            document.getElementById('admin-dashboard-panel').classList.remove('hidden');
+            document.getElementById('btn-toggle-param').classList.add('hidden');
+            document.getElementById('btn-export-pdf').classList.add('hidden');
+            document.getElementById('btn-back-to-admin').classList.add('hidden');
+            document.getElementById('sync-indicator').classList.add('hidden');
+
+            const badge = document.getElementById('active-session-badge');
+            badge.textContent = "ADMIN WAKABID KURIKULUM";
+            badge.classList.remove('hidden');
+
+            renderAdminMonitoringTable();
+            showToast("Berhasil masuk sebagai Admin Wakabid Kurikulum.");
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function inspectTeacherRecordFromAdmin(docId) {
+            const record = allTeachersRecords.find(r => r.id === docId);
+            if (!record || !record.stateData) {
+                showToast("Data perangkat guru tidak ditemukan.", "error");
+                return;
+            }
+
+            currentTeacherDocId = docId;
+            isAdminInspecting = true;
+            appState = { ...JSON.parse(JSON.stringify(defaultState)), ...record.stateData };
+
+            document.getElementById('admin-dashboard-panel').classList.add('hidden');
+            document.getElementById('workspace-main').classList.remove('hidden');
+            document.getElementById('btn-toggle-param').classList.remove('hidden');
+            document.getElementById('btn-export-pdf').classList.remove('hidden');
+            document.getElementById('btn-back-to-admin').classList.remove('hidden');
+
+            const badge = document.getElementById('active-session-badge');
+            badge.textContent = `PRATINJAU ADMIN: ${record.namaGuru} (${record.mapel})`;
+
+            renderDimensiCheckboxes();
+            syncAllDOM();
+            renderAssessmentTables();
+            switchTab('kisi');
+            showToast(`Menampilkan perangkat milik ${record.namaGuru}.`);
+        }
+
+        function returnToAdminDashboard() {
+            isAdminInspecting = false;
+            document.getElementById('workspace-main').classList.add('hidden');
+            document.getElementById('admin-dashboard-panel').classList.remove('hidden');
+            document.getElementById('btn-toggle-param').classList.add('hidden');
+            document.getElementById('btn-export-pdf').classList.add('hidden');
+            document.getElementById('btn-back-to-admin').classList.add('hidden');
+
+            const badge = document.getElementById('active-session-badge');
+            badge.textContent = "ADMIN WAKABID KURIKULUM";
+            renderAdminMonitoringTable();
+        }
+
+        function logoutSession() {
+            currentSessionRole = null;
+            currentTeacherDocId = null;
+            isAdminInspecting = false;
+            document.getElementById('login-admin-password').value = '';
+            document.getElementById('admin-login-error').classList.add('hidden');
+            document.getElementById('auth-overlay').classList.remove('hidden');
+            showToast("Anda telah keluar dari sesi aktif.", "info");
+        }
+
+        function renderAdminMonitoringTable() {
+            const tbody = document.getElementById('admin-monitoring-tbody');
+            if (!tbody) return;
+
+            const searchTerm = (document.getElementById('admin-search-input')?.value || '').toLowerCase().trim();
+            const statusFilter = document.getElementById('admin-filter-status')?.value || 'all';
+
+            const totalRecords = allTeachersRecords.length;
+            let completeCount = 0;
+            let inProgressCount = 0;
+            let totalPctSum = 0;
+
+            allTeachersRecords.forEach(rec => {
+                const prog = rec.progress || evaluateSixMenusProgress(rec.stateData);
+                totalPctSum += prog.percentage;
+                if (prog.completedCount === 6) completeCount++;
+                else inProgressCount++;
+            });
+
+            document.getElementById('stat-total-records').textContent = totalRecords;
+            document.getElementById('stat-completed-records').textContent = completeCount;
+            document.getElementById('stat-inprogress-records').textContent = inProgressCount;
+            document.getElementById('stat-avg-progress').textContent = totalRecords ? `${Math.round(totalPctSum / totalRecords)}%` : '0%';
+
+            const filtered = allTeachersRecords.filter(rec => {
+                const prog = rec.progress || evaluateSixMenusProgress(rec.stateData);
+                if (statusFilter === 'complete' && prog.completedCount < 6) return false;
+                if (statusFilter === 'progress' && prog.completedCount === 6) return false;
+
+                if (searchTerm) {
+                    const haystack = `${rec.namaGuru} ${rec.nipGuru} ${rec.mapel} ${rec.kelasFase}`.toLowerCase();
+                    if (!haystack.includes(searchTerm)) return false;
+                }
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="12" class="py-8 text-center text-slate-500">
+                            Belum ada data guru yang sesuai dengan filter pencarian. Guru yang login akan otomatis muncul di tabel ini secara real-time.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            const statusIcon = (done) => done
+                ? `<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 font-bold" title="Sudah Terisi">✓</span>`
+                : `<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-400 font-semibold" title="Belum Lengkap">•</span>`;
+
+            tbody.innerHTML = filtered.map((rec, idx) => {
+                const prog = rec.progress || evaluateSixMenusProgress(rec.stateData);
+                const updatedText = rec.updatedAt ? new Date(rec.updatedAt).toLocaleString('id-ID', {
+                    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                }) : '-';
+                const barColor = prog.percentage === 100 ? 'bg-emerald-600' : (prog.percentage >= 50 ? 'bg-indigo-600' : 'bg-amber-500');
+
+                return `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="py-3 px-3 text-center font-semibold text-slate-600">${idx + 1}</td>
+                        <td class="py-3 px-3">
+                            <p class="font-bold text-slate-900">${rec.namaGuru || '-'}</p>
+                            <p class="text-[11px] text-slate-500">NIP. ${rec.nipGuru || '-'}</p>
+                        </td>
+                        <td class="py-3 px-3">
+                            <p class="font-semibold text-indigo-950">${rec.mapel || '-'}</p>
+                            <p class="text-[11px] text-slate-500">${rec.kelasFase || '-'} • Sem. ${rec.semester || '-'}</p>
+                        </td>
+                        <td class="py-3 px-2 text-center">${statusIcon(prog.m1)}</td>
+                        <td class="py-3 px-2 text-center">${statusIcon(prog.m2)}</td>
+                        <td class="py-3 px-2 text-center">${statusIcon(prog.m3)}</td>
+                        <td class="py-3 px-2 text-center">${statusIcon(prog.m4)}</td>
+                        <td class="py-3 px-2 text-center">${statusIcon(prog.m5)}</td>
+                        <td class="py-3 px-2 text-center">${statusIcon(prog.m6)}</td>
+                        <td class="py-3 px-3">
+                            <div class="flex items-center justify-between text-[11px] font-bold mb-1">
+                                <span>${prog.completedCount}/6 Menu</span>
+                                <span>${prog.percentage}%</span>
+                            </div>
+                            <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                                <div class="h-full ${barColor} transition-all duration-300" style="width: ${prog.percentage}%"></div>
+                            </div>
+                        </td>
+                        <td class="py-3 px-3 text-center text-[11px] text-slate-600">${updatedText}</td>
+                        <td class="py-3 px-3 text-center">
+                            <button type="button" onclick="inspectTeacherRecordFromAdmin('${rec.id}')" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-200 transition">
+                                <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                                <span>Lihat / Cetak</span>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function exportAdminRecapCSV() {
+            if (!allTeachersRecords.length) {
+                showToast("Belum ada data guru untuk diunduh.", "info");
+                return;
+            }
+            const headers = ["No", "Nama Guru", "NIP", "Mata Pelajaran", "Kelas/Fase", "M1 Kisi-Kisi", "M2 LKPD", "M3 Rubrik", "M4 Instrumen", "M5 Laporan Nilai", "M6 Refleksi Guru", "Progres (%)", "Pembaruan Terakhir"];
+            const rows = allTeachersRecords.map((rec, i) => {
+                const p = rec.progress || evaluateSixMenusProgress(rec.stateData);
+                return [
+                    i + 1,
+                    `"${(rec.namaGuru || '').replace(/"/g, '""')}"`,
+                    `"${(rec.nipGuru || '').replace(/"/g, '""')}"`,
+                    `"${(rec.mapel || '').replace(/"/g, '""')}"`,
+                    `"${(rec.kelasFase || '').replace(/"/g, '""')}"`,
+                    p.m1 ? "Selesai" : "Belum",
+                    p.m2 ? "Selesai" : "Belum",
+                    p.m3 ? "Selesai" : "Belum",
+                    p.m4 ? "Selesai" : "Belum",
+                    p.m5 ? "Selesai" : "Belum",
+                    p.m6 ? "Selesai" : "Belum",
+                    `${p.percentage}%`,
+                    `"${rec.updatedAt || '-'}"`
+                ].join(",");
+            });
+
+            const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\n");
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `Rekap_Monitoring_Asesmen_PjBL_SMKN1_Amarsel.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast("Rekap monitoring Wakabid Kurikulum berhasil diunduh.");
+        }
+
+        let appState = JSON.parse(JSON.stringify(defaultState));
+
+        async function persistTeacherRecord(immediate = false) {
+            if (!currentTeacherDocId) return;
+
+            const syncEl = document.getElementById('sync-indicator');
+            if (syncEl) {
+                syncEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span> Menyimpan...`;
+            }
+
+            const executeSave = async () => {
+                const progress = evaluateSixMenusProgress(appState);
+                const payload = {
+                    namaGuru: appState.namaGuru || '',
+                    nipGuru: appState.nipGuru || '',
+                    mapel: appState.mapel || '',
+                    kelasFase: appState.kelasFase || '',
+                    semester: appState.semester || '',
+                    tahunPelajaran: appState.tahunPelajaran || '',
+                    updatedAt: new Date().toISOString(),
+                    progress: progress,
+                    stateData: JSON.parse(JSON.stringify(appState))
+                };
+
+                try {
+                    if (isCloudReady && db && fbUser) {
+                        const { doc, setDoc } = window.fbModules;
+                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'perangkat_guru_pjbl', currentTeacherDocId);
+                        await setDoc(docRef, payload, { merge: true });
+                    } else {
+                        const raw = localStorage.getItem('smk_pjbl_multi_registry_v1');
+                        const mapObj = raw ? JSON.parse(raw) : {};
+                        mapObj[currentTeacherDocId] = { id: currentTeacherDocId, ...payload };
+                        localStorage.setItem('smk_pjbl_multi_registry_v1', JSON.stringify(mapObj));
+                        loadLocalFallbackRegistry();
+                    }
+
+                    if (syncEl) {
+                        syncEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Tersimpan di Cloud`;
+                    }
+                } catch (err) {
+                    console.error("Gagal menyimpan ke cloud:", err);
+                }
+            };
+
+            if (immediate) {
+                await executeSave();
+            } else {
+                clearTimeout(saveDebounceTimer);
+                saveDebounceTimer = setTimeout(executeSave, 500);
+            }
+        }
+
+        function saveState() {
+            persistTeacherRecord(false);
+        }
+
+        function handleLogoUpload(key, inputEl) {
+            const file = inputEl.files && inputEl.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                appState[key] = ev.target.result;
+                saveState();
+                syncAllDOM();
+                showToast("Logo berhasil diperbarui.");
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function showToast(message, type = "success") {
+            const container = document.getElementById("toast-container");
+            const el = document.createElement("div");
+            const bg = type === "error" ? "bg-rose-600" : (type === "info" ? "bg-indigo-600" : "bg-emerald-600");
+            el.className = `${bg} text-white px-4 py-2.5 rounded-xl shadow-lg text-xs sm:text-sm font-medium flex items-center gap-2 transition-all`;
+            el.textContent = message;
+            container.appendChild(el);
+            setTimeout(() => {
+                el.style.opacity = "0";
+                setTimeout(() => el.remove(), 300);
+            }, 3200);
+        }
+
+        // Injeksi Kop Surat Resmi & Blok Tanda Tangan Kepala Sekolah + Guru
+        function injectTemplates() {
+            const kopHTML = `
+                <div class="kop-surat flex items-center justify-between gap-3">
+                    <div class="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 flex items-center justify-center">
+                        <img src="${SVG_LOGO_NTT}" alt="Logo Provinsi NTT" class="img-logo-kiri max-h-full max-w-full object-contain">
+                    </div>
+                    <div class="flex-1 text-center leading-snug">
+                        <p class="text-xs sm:text-sm font-bold uppercase tracking-wide text-slate-900">PEMERINTAH PROVINSI NUSA TENGGARA TIMUR</p>
+                        <p class="text-xs sm:text-sm font-bold uppercase tracking-wide text-slate-900">DINAS PENDIDIKAN DAN KEBUDAYAAN</p>
+                        <h2 class="text-sm sm:text-lg font-extrabold uppercase tracking-wider text-slate-950">SMK NEGERI 1 AMARASI SELATAN</h2>
+                        <p class="text-[11px] sm:text-xs text-slate-700">Jln. A. R. Koroh – Retraen, Kec. Amarasi Selatan, Kab. Kupang, Kode Pos 85367</p>
+                        <p class="text-[10px] sm:text-[11px] text-slate-600">Email: smkn1amarasiselatan@gmail.com | Website: www.smkn1amarasiselatan.sch.id</p>
+                    </div>
+                    <div class="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 flex items-center justify-center">
+                        <img src="${SVG_LOGO_SMK}" alt="Logo SMK Negeri 1 Amarasi Selatan" class="img-logo-kanan max-h-full max-w-full object-contain">
+                    </div>
+                </div>
+            `;
+
+            const signHTML = `
+                <div class="signature-block mt-8 grid grid-cols-2 gap-8 text-xs sm:text-sm text-slate-900">
+                    <div class="text-left">
+                        <p>Mengetahui,</p>
+                        <p>Kepala SMK Negeri 1 Amarasi Selatan</p>
+                        <div class="h-16"></div>
+                        <p class="font-bold underline">Rizal B. Ndolu, S.Pi., MM</p>
+                        <p>NIP. 19720525 200604 1 017</p>
+                    </div>
+                    <div class="text-left pl-6 sm:pl-16">
+                        <p class="out-tempatTanggalPengesahan">Retraen, 15 Mei 2026</p>
+                        <p>Guru Mata Pelajaran</p>
+                        <div class="h-16"></div>
+                        <p class="font-bold underline out-namaGuru">Imanuel Maniyeni, S.Pd.</p>
+                        <p>NIP. <span class="out-nipGuru">19880512 201503 1 004</span></p>
+                    </div>
+                </div>
+            `;
+
+            document.querySelectorAll(".kop-surat-container").forEach(el => el.innerHTML = kopHTML);
+            document.querySelectorAll(".signature-container").forEach(el => el.innerHTML = signHTML);
+        }
+
+        function renderDimensiCheckboxes() {
+            const container = document.getElementById("dimensi-checkboxes");
+            if (!container) return;
+            container.innerHTML = DIMENSI_LIST.map(dim => {
+                const checked = appState.selectedDimensi.includes(dim) ? "checked" : "";
+                return `
+                    <label class="flex items-start gap-2 p-2 rounded-lg bg-white border border-slate-200 hover:border-indigo-400 cursor-pointer text-xs">
+                        <input type="checkbox" value="${dim}" ${checked} onchange="toggleDimensi(this)" class="mt-0.5 rounded text-indigo-600 focus:ring-indigo-500">
+                        <span class="font-medium text-slate-800 leading-tight">${dim}</span>
+                    </label>
+                `;
+            }).join("");
+        }
+
+        function toggleDimensi(cb) {
+            const val = cb.value;
+            if (cb.checked) {
+                if (!appState.selectedDimensi.includes(val)) appState.selectedDimensi.push(val);
+            } else {
+                appState.selectedDimensi = appState.selectedDimensi.filter(d => d !== val);
+            }
+            saveState();
+            syncAllDOM();
+        }
+
+        function handleDropdownWithCustom(fieldKey, selectedVal) {
+            const customInput = document.getElementById(`custom-${fieldKey}`);
+            if (selectedVal === "__CUSTOM__") {
+                if (customInput) {
+                    customInput.classList.remove("hidden");
+                    customInput.focus();
+                }
+            } else {
+                if (customInput) customInput.classList.add("hidden");
+                appState[fieldKey] = selectedVal;
+                saveState();
+                syncAllDOM();
+            }
+        }
+
+        function syncDropdownUI(fieldKey) {
+            const selectEl = document.getElementById(`select-${fieldKey}`);
+            const customEl = document.getElementById(`custom-${fieldKey}`);
+            if (!selectEl) return;
+            const currentVal = appState[fieldKey] || "";
+            const options = Array.from(selectEl.options).map(o => o.value);
+            if (options.includes(currentVal)) {
+                selectEl.value = currentVal;
+                if (customEl) customEl.classList.add("hidden");
+            } else {
+                selectEl.value = "__CUSTOM__";
+                if (customEl) {
+                    customEl.classList.remove("hidden");
+                    customEl.value = currentVal;
+                }
+            }
+        }
+
+        function syncAllDOM() {
+            // Sinkronisasi input form
+            document.querySelectorAll("[data-bind]").forEach(el => {
+                const key = el.getAttribute("data-bind");
+                if (appState[key] !== undefined && document.activeElement !== el) {
+                    el.value = appState[key];
+                }
+            });
+
+            ["kelasFase", "bentukProyek", "tagihanProyek", "karakteristikMurid"].forEach(syncDropdownUI);
+
+            // Logo Kiri & Kanan
+            const srcKiri = (!appState.logoKiri || appState.logoKiri === "BUILTIN_NTT") ? SVG_LOGO_NTT : appState.logoKiri;
+            const srcKanan = (!appState.logoKanan || appState.logoKanan === "BUILTIN_SMK") ? SVG_LOGO_SMK : appState.logoKanan;
+
+            document.querySelectorAll(".img-logo-kiri").forEach(img => {
+                img.src = srcKiri;
+                img.onerror = () => { img.src = SVG_LOGO_NTT; };
+            });
+            document.querySelectorAll(".img-logo-kanan").forEach(img => {
+                img.src = srcKanan;
+                img.onerror = () => { img.src = SVG_LOGO_SMK; };
+            });
+
+            // Sinkronisasi semua kelas .out-*
+            const simpleFields = [
+                "mapel", "kompetensiKeahlian", "kelasFase", "semester", "tahunPelajaran",
+                "namaGuru", "nipGuru", "tempatTanggalPengesahan", "temaProyek", "lintasDisiplin",
+                "alokasiWaktu", "bentukProyek", "tagihanProyek", "karakteristikMurid",
+                "capaianPembelajaran", "tujuanProyek", "materiProyek", "kompPengetahuan",
+                "kompKeterampilan", "deskripsiTugas", "tahapanPelaksanaan", "kriteriaPenilaian",
+                "instrumenPenilaian", "sumberBelajar", "lainLain", "lkpdSintaks1", "lkpdSintaks2",
+                "lkpdSintaks5", "refleksiQ1", "refleksiQ2", "refleksiQ3", "refleksiQ4"
+            ];
+
+            simpleFields.forEach(key => {
+                document.querySelectorAll(`.out-${key}`).forEach(el => {
+                    if (document.activeElement !== el) {
+                        el.textContent = appState[key] || "";
+                    }
+                });
+            });
+
+            document.querySelectorAll(".out-semester-upper").forEach(el => {
+                el.textContent = (appState.semester || "GENAP").toUpperCase();
+            });
+
+            const dimensiText = appState.selectedDimensi.length
+                ? `${appState.selectedDimensi.join(", ")} (Kerangka Deep Learning: Berkembang, Cakap, Mahir - Kep. BSKAP No. 058/H/KR/2025).`
+                : "Penalaran Kritis, Kreativitas, Kolaborasi, Kemandirian, Komunikasi (Kep. BSKAP No. 058/H/KR/2025).";
+
+            document.querySelectorAll(".out-kompSikap").forEach(el => {
+                el.textContent = dimensiText;
+            });
+        }
+
+        function bindInputs() {
+            document.querySelectorAll("[data-bind]").forEach(el => {
+                const key = el.getAttribute("data-bind");
+                el.addEventListener("input", () => {
+                    appState[key] = el.value;
+                    saveState();
+                    syncAllDOM();
+                });
+            });
+
+            // Listener konten editable pada kisi-kisi, LKPD & Refleksi Guru
+            document.querySelectorAll("[data-refleksi]").forEach(el => {
+                const qKey = "refleksi" + el.getAttribute("data-refleksi").toUpperCase();
+                el.addEventListener("input", () => {
+                    appState[qKey] = el.innerText.trim();
+                    saveState();
+                });
+            });
+
+            const editableMap = {
+                "out-karakteristikMurid": "karakteristikMurid",
+                "out-capaianPembelajaran": "capaianPembelajaran",
+                "out-tujuanProyek": "tujuanProyek",
+                "out-materiProyek": "materiProyek",
+                "out-kompPengetahuan": "kompPengetahuan",
+                "out-kompKeterampilan": "kompKeterampilan",
+                "out-deskripsiTugas": "deskripsiTugas",
+                "out-tahapanPelaksanaan": "tahapanPelaksanaan",
+                "out-kriteriaPenilaian": "kriteriaPenilaian",
+                "out-instrumenPenilaian": "instrumenPenilaian",
+                "out-sumberBelajar": "sumberBelajar",
+                "out-lainLain": "lainLain",
+                "out-lkpdSintaks1": "lkpdSintaks1",
+                "out-lkpdSintaks2": "lkpdSintaks2",
+                "out-lkpdSintaks5": "lkpdSintaks5"
+            };
+
+            Object.entries(editableMap).forEach(([cls, stateKey]) => {
+                document.querySelectorAll(`.${cls}[contenteditable="true"]`).forEach(el => {
+                    el.addEventListener("input", () => {
+                        appState[stateKey] = el.innerText.trim();
+                        saveState();
+                    });
+                });
+            });
+        }
+
+        // =========================================================================
+        // KALKULASI & RENDER TABEL MENU 4 & MENU 5
+        // =========================================================================
+        function getKetuntasanInfo(nilaiAkhir) {
+            if (nilaiAkhir === 0) {
+                return { status: "Belum Dinilai", tindak: "Lakukan observasi & input skor" };
+            }
+            if (nilaiAkhir <= 59) {
+                return { status: "Belum mencapai (0–59)", tindak: "Remedial di seluruh bagian" };
+            }
+            if (nilaiAkhir <= 69) {
+                return { status: "Belum mencapai ketuntasan (60–69)", tindak: "Remedial di bagian yang diperlukan" };
+            }
+            if (nilaiAkhir <= 89) {
+                return { status: "Sudah mencapai ketuntasan (70–89)", tindak: "Tidak perlu remedial" };
+            }
+            return { status: "Sudah mencapai ketuntasan (90–100)", tindak: "Perlu pengayaan" };
+        }
+
+        function setStudentScore(studentIdx, critIdx, scoreVal) {
+            const student = appState.students[studentIdx];
+            if (!student) return;
+            student.scores[critIdx] = Number(scoreVal);
+            saveState();
+            renderAssessmentTables();
+        }
+
+        function updateStudentName(studentIdx, newName) {
+            if (!appState.students[studentIdx]) return;
+            appState.students[studentIdx].name = newName.trim();
+            saveState();
+            renderAssessmentTables();
+        }
+
+        function addStudentRow() {
+            const nextNo = appState.students.length + 1;
+            appState.students.push({
+                id: Date.now(),
+                name: `Peserta Didik ${nextNo}`,
+                scores: [0, 0, 0, 0]
+            });
+            saveState();
+            renderAssessmentTables();
+            showToast("Baris peserta didik baru ditambahkan.");
+        }
+
+        function deleteStudentRow(idx) {
+            appState.students.splice(idx, 1);
+            saveState();
+            renderAssessmentTables();
+        }
+
+        function clearManualTableScores() {
+            appState.students.forEach(s => {
+                s.scores = [0, 0, 0, 0];
+            });
+            saveState();
+            renderAssessmentTables();
+            showToast("Seluruh isian centang & skor pada tabel berhasil dikosongkan.", "info");
+        }
+
+        function renderAssessmentTables() {
+            const manualTbody = document.getElementById("manual-table-body");
+            const nilaiTbody = document.getElementById("nilai-table-body");
+            const skorMaks = 16;
+
+            if (manualTbody) {
+                manualTbody.innerHTML = appState.students.map((st, sIdx) => {
+                    const totalSkor = st.scores.reduce((a, b) => a + (Number(b) || 0), 0);
+                    const persen = Math.round((totalSkor / skorMaks) * 100);
+                    const info = getKetuntasanInfo(persen);
+
+                    let checkCells = "";
+                    for (let c = 0; c < 4; c++) {
+                        for (let val = 1; val <= 4; val++) {
+                            const isChecked = Number(st.scores[c]) === val;
+                            checkCells += `
+                                <td onclick="setStudentScore(${sIdx}, ${c}, ${val})" class="text-center cursor-pointer select-none hover:bg-indigo-100 font-bold ${isChecked ? 'bg-emerald-100 text-emerald-800' : 'text-slate-300'}">
+                                    ${isChecked ? '✓' : ''}
+                                </td>
+                            `;
+                        }
+                    }
+
+                    return `
+                        <tr>
+                            <td class="text-center font-semibold">${sIdx + 1}</td>
+                            <td>
+                                <div class="flex items-center justify-between gap-1">
+                                    <span contenteditable="true" onblur="updateStudentName(${sIdx}, this.innerText)" class="font-medium flex-1">${st.name}</span>
+                                    <button type="button" onclick="deleteStudentRow(${sIdx})" class="no-print text-rose-500 hover:text-rose-700 px-1" title="Hapus Siswa">×</button>
+                                </div>
+                            </td>
+                            ${checkCells}
+                            <td class="text-center font-bold">${totalSkor}</td>
+                            <td class="text-center">${skorMaks}</td>
+                            <td class="text-center font-bold">${persen}%</td>
+                            <td class="text-[11px]">${info.tindak}</td>
+                        </tr>
+                    `;
+                }).join("");
+            }
+
+            if (nilaiTbody) {
+                nilaiTbody.innerHTML = appState.students.map((st, sIdx) => {
+                    const totalSkor = st.scores.reduce((a, b) => a + (Number(b) || 0), 0);
+                    const nilaiAkhir = Math.round((totalSkor / skorMaks) * 100);
+                    const info = getKetuntasanInfo(nilaiAkhir);
+                    const badgeClass = nilaiAkhir >= 70
+                        ? "text-emerald-800 font-semibold"
+                        : (nilaiAkhir > 0 ? "text-rose-700 font-semibold" : "text-slate-500");
+
+                    const scoreInputs = [0, 1, 2, 3].map(c => `
+                        <td class="text-center p-1">
+                            <select onchange="setStudentScore(${sIdx}, ${c}, this.value)" class="w-full text-center bg-transparent font-bold outline-none cursor-pointer">
+                                <option value="0" ${st.scores[c] == 0 ? 'selected' : ''}>-</option>
+                                <option value="1" ${st.scores[c] == 1 ? 'selected' : ''}>1</option>
+                                <option value="2" ${st.scores[c] == 2 ? 'selected' : ''}>2</option>
+                                <option value="3" ${st.scores[c] == 3 ? 'selected' : ''}>3</option>
+                                <option value="4" ${st.scores[c] == 4 ? 'selected' : ''}>4</option>
+                            </select>
+                        </td>
+                    `).join("");
+
+                    return `
+                        <tr>
+                            <td class="text-center font-semibold">${sIdx + 1}</td>
+                            <td>
+                                <span contenteditable="true" onblur="updateStudentName(${sIdx}, this.innerText)" class="font-medium">${st.name}</span>
+                            </td>
+                            ${scoreInputs}
+                            <td class="text-center font-bold">${totalSkor}</td>
+                            <td class="text-center">${skorMaks}</td>
+                            <td class="text-center font-extrabold bg-indigo-50/70 text-indigo-950">${nilaiAkhir}</td>
+                            <td class="${badgeClass}">${info.status}</td>
+                            <td>${info.tindak}</td>
+                        </tr>
+                    `;
+                }).join("");
+            }
+        }
+
+        // =========================================================================
+        // NAVIGASI TAB & PANEL PARAMETER
+        // =========================================================================
+        let activeTabId = "kisi";
+
+        function switchTab(tabId) {
+            activeTabId = tabId;
+            document.querySelectorAll(".tab-content").forEach(el => {
+                el.classList.add("hidden");
+                el.classList.remove("active-tab");
+            });
+            const target = document.getElementById(`tab-${tabId}`);
+            if (target) {
+                target.classList.remove("hidden");
+                target.classList.add("active-tab");
+            }
+
+            document.querySelectorAll(".tab-btn").forEach(btn => {
+                btn.className = "tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-100 transition whitespace-nowrap";
+            });
+            const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+            if (activeBtn) {
+                activeBtn.className = "tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold bg-indigo-600 text-white shadow-sm transition whitespace-nowrap";
+            }
+        }
+
+        function toggleParameterPanel() {
+            const panel = document.getElementById("parameter-panel");
+            const btnText = document.querySelector("#btn-toggle-param span");
+            if (panel.classList.contains("hidden")) {
+                panel.classList.remove("hidden");
+                if (btnText) btnText.textContent = "Sembunyikan Parameter";
+            } else {
+                panel.classList.add("hidden");
+                if (btnText) btnText.textContent = "Tampilkan Parameter";
+            }
+        }
+
+        function resetToDefault() {
+            const keepNama = appState.namaGuru;
+            const keepMapel = appState.mapel;
+            const keepNip = appState.nipGuru;
+            appState = JSON.parse(JSON.stringify(defaultState));
+            if (currentSessionRole === "guru" && keepNama) {
+                appState.namaGuru = keepNama;
+                appState.mapel = keepMapel;
+                appState.nipGuru = keepNip;
+            }
+            saveState();
+            renderDimensiCheckboxes();
+            syncAllDOM();
+            renderAssessmentTables();
+            showToast("Template berhasil dikembalikan ke pengaturan standar.");
+        }
+
+        // =========================================================================
+        // GENERATOR IDE & PERANGKAT BERBASIS GEMINI AI
+        // =========================================================================
+        async function generateWithAI() {
+            const promptText = document.getElementById("ai-prompt-input").value.trim();
+            if (!promptText) {
+                showToast("Ketik fokus ide proyek kejuruan Anda terlebih dahulu.", "error");
+                return;
+            }
+
+            const btn = document.getElementById("btn-generate-ai");
+            const origHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Menyusun Perangkat AI...</span>`;
+            if (window.lucide) lucide.createIcons();
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+            const systemInstruction = "Anda adalah Pakar Kurikulum SMK Kemendikdasmen (Kep. BSKAP No. 046/H/KR/2025 & 058/H/KR/2025). Susun perangkat asesmen sumatif PjBL dalam JSON valid bahasa Indonesia yang operasional, kontekstual untuk SMK di Amarasi Selatan NTT, dan bebas teks placeholder.";
+            const userPrompt = `Buatkan perangkat PjBL lengkap untuk Mata Pelajaran: ${appState.mapel}, Konsentrasi Keahlian: ${appState.kompetensiKeahlian}, Kelas/Fase: ${appState.kelasFase}, Karakteristik Murid: ${appState.karakteristikMurid}, Fokus Ide Proyek: "${promptText}".`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userPrompt }] }],
+                systemInstruction: { parts: [{ text: systemInstruction }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            temaProyek: { type: "STRING" },
+                            capaianPembelajaran: { type: "STRING" },
+                            tujuanProyek: { type: "STRING" },
+                            materiProyek: { type: "STRING" },
+                            kompPengetahuan: { type: "STRING" },
+                            kompKeterampilan: { type: "STRING" },
+                            deskripsiTugas: { type: "STRING" },
+                            tahapanPelaksanaan: { type: "STRING" },
+                            kriteriaPenilaian: { type: "STRING" },
+                            lkpdSintaks1: { type: "STRING" },
+                            lkpdSintaks2: { type: "STRING" },
+                            lkpdSintaks5: { type: "STRING" }
+                        },
+                        required: ["temaProyek", "capaianPembelajaran", "tujuanProyek", "materiProyek", "kompPengetahuan", "kompKeterampilan", "deskripsiTugas", "tahapanPelaksanaan", "kriteriaPenilaian", "lkpdSintaks1", "lkpdSintaks2", "lkpdSintaks5"]
+                    }
+                }
+            };
+
+            try {
+                let responseData = null;
+                for (let attempt = 0; attempt < 3; attempt++) {
+                    const res = await fetch(apiUrl, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
+                    });
+                    if (res.ok) {
+                        responseData = await res.json();
+                        break;
+                    }
+                    await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt)));
+                }
+
+                const rawText = responseData?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!rawText) throw new Error("Respons AI kosong.");
+                const generated = JSON.parse(rawText);
+
+                Object.assign(appState, generated);
+                saveState();
+                syncAllDOM();
+                showToast("Perangkat asesmen PjBL berhasil disusun oleh AI!");
+            } catch (err) {
+                console.warn("AI fallback lokal:", err);
+                appState.temaProyek = `Proyek Terapan: ${promptText}`;
+                appState.deskripsiTugas = `Peserta didik secara berkelompok merancang, memproduksi, dan menguji proyek "${promptText}" sesuai standar K3 dan mutu industri kejuruan.`;
+                appState.lkpdSintaks1 = `Permasalahan kontekstual di lingkungan sekitar sekolah dan masyarakat Amarasi Selatan menuntut inovasi kejuruan pada bidang ${appState.mapel}. Bagaimana tim Anda merancang solusi nyata berupa "${promptText}" yang efektif, efisien, dan bernilai ekonomis?`;
+                saveState();
+                syncAllDOM();
+                showToast("Tema proyek & struktur dasar berhasil diperbarui.", "info");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = origHTML;
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+
+        // =========================================================================
+        // EKSPOR PDF A4 ANTI-TERPOTONG DENGAN jsPDF + SMART PAGE BREAK
+        // =========================================================================
+        async function exportToPDF() {
+            const btn = document.getElementById("btn-export-pdf");
+            const origHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Memproses PDF A4...</span>`;
+            if (window.lucide) lucide.createIcons();
+
+            try {
+                const activeSheet = document.querySelector(`#tab-${activeTabId} .document-sheet`);
+                if (!activeSheet) throw new Error("Dokumen aktif tidak ditemukan.");
+
+                // Buat kloning off-screen lebar 1050px agar tabel lebar muat utuh ke samping
+                const cloneWrapper = document.createElement("div");
+                cloneWrapper.style.position = "fixed";
+                cloneWrapper.style.left = "-9999px";
+                cloneWrapper.style.top = "0";
+                cloneWrapper.style.width = "1050px";
+                cloneWrapper.style.background = "#ffffff";
+                cloneWrapper.style.padding = "32px 40px";
+                cloneWrapper.style.zIndex = "-1";
+
+                const clonedSheet = activeSheet.cloneNode(true);
+                clonedSheet.style.boxShadow = "none";
+                clonedSheet.style.border = "none";
+                clonedSheet.style.padding = "0";
+                clonedSheet.style.margin = "0";
+                clonedSheet.style.width = "100%";
+
+                clonedSheet.querySelectorAll(".no-print").forEach(el => el.remove());
+                clonedSheet.querySelectorAll(".table-responsive-wrapper").forEach(w => {
+                    w.style.overflow = "visible";
+                });
+                clonedSheet.querySelectorAll("select").forEach(sel => {
+                    const span = document.createElement("span");
+                    span.textContent = sel.options[sel.selectedIndex]?.text || "-";
+                    span.style.fontWeight = "700";
+                    sel.replaceWith(span);
+                });
+
+                cloneWrapper.appendChild(clonedSheet);
+                document.body.appendChild(cloneWrapper);
+
+                // Hitung titik potong aman (safe break points) pada batas baris tabel, blok sintaks, dan tanda tangan
+                const wrapperRect = cloneWrapper.getBoundingClientRect();
+                const safeBreakpoints = new Set([0]);
+                clonedSheet.querySelectorAll("tr, .lkpd-stage-box, .signature-block, .kop-surat").forEach(el => {
+                    const rect = el.getBoundingClientRect();
+                    const topRel = Math.round(rect.top - wrapperRect.top);
+                    const bottomRel = Math.round(rect.bottom - wrapperRect.top);
+                    if (topRel > 0) safeBreakpoints.add(topRel);
+                    if (bottomRel > 0) safeBreakpoints.add(bottomRel);
+                });
+                const sortedBreaks = Array.from(safeBreakpoints).sort((a, b) => a - b);
+
+                const scaleFactor = 2;
+                const canvas = await html2canvas(cloneWrapper, {
+                    scale: scaleFactor,
+                    useCORS: true,
+                    backgroundColor: "#ffffff",
+                    windowWidth: 1050
+                });
+
+                document.body.removeChild(cloneWrapper);
+
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF("p", "mm", "a4");
+                const pageWidthMM = 210;
+                const pageHeightMM = 297;
+                const marginMM = 10;
+                const printableWidthMM = pageWidthMM - marginMM * 2;
+                const printableHeightMM = pageHeightMM - marginMM * 2;
+
+                const pxPerMM = canvas.width / printableWidthMM;
+                const maxSliceHeightPx = Math.floor(printableHeightMM * pxPerMM);
+
+                let currentY = 0;
+                let pageIndex = 0;
+
+                while (currentY < canvas.height) {
+                    let targetEnd = currentY + maxSliceHeightPx;
+                    if (targetEnd >= canvas.height) {
+                        targetEnd = canvas.height;
+                    } else {
+                        // Cari titik potong aman terdekat sebelum targetEnd agar baris tidak terbelah
+                        let bestBreak = targetEnd;
+                        for (let i = sortedBreaks.length - 1; i >= 0; i--) {
+                            const bpPx = sortedBreaks[i] * scaleFactor;
+                            if (bpPx <= targetEnd && bpPx > currentY + maxSliceHeightPx * 0.45) {
+                                bestBreak = bpPx;
+                                break;
+                            }
+                        }
+                        targetEnd = bestBreak;
+                    }
+
+                    const sliceHeight = Math.max(1, targetEnd - currentY);
+                    const sliceCanvas = document.createElement("canvas");
+                    sliceCanvas.width = canvas.width;
+                    sliceCanvas.height = sliceHeight;
+                    const ctx = sliceCanvas.getContext("2d");
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+                    ctx.drawImage(canvas, 0, currentY, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
+
+                    const imgData = sliceCanvas.toDataURL("image/jpeg", 0.95);
+                    const sliceHeightMM = sliceHeight / pxPerMM;
+
+                    if (pageIndex > 0) pdf.addPage();
+                    pdf.addImage(imgData, "JPEG", marginMM, marginMM, printableWidthMM, sliceHeightMM);
+
+                    currentY = targetEnd;
+                    pageIndex++;
+                }
+
+                const tabNames = {
+                    kisi: "1_Kisi_Kisi_Sumatif",
+                    lkpd: "2_LKPD_Proyek",
+                    rubrik: "3_Rubrik_Penilaian",
+                    manual: "4_Instrumen_Asesmen_Manual",
+                    nilai: "5_Laporan_Nilai_Sumatif",
+                    refleksi: "6_Refleksi_Guru"
+                };
+                const fileName = `${tabNames[activeTabId] || "Dokumen_PjBL"}_${slugifyKey(appState.mapel)}.pdf`;
+                pdf.save(fileName);
+                showToast(`File ${fileName} berhasil diunduh.`);
+            } catch (err) {
+                console.error("Ekspor PDF gagal, beralih ke dialog cetak browser:", err);
+                window.print();
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = origHTML;
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+
+        // =========================================================================
+        // INISIALISASI APLIKASI SAAT HALAMAN DIMUAT
+        // =========================================================================
+        document.addEventListener("DOMContentLoaded", () => {
+            injectTemplates();
+            renderDimensiCheckboxes();
+            syncAllDOM();
+            bindInputs();
+            renderAssessmentTables();
+            if (window.lucide) lucide.createIcons();
+
+            if (window.fbModules) {
+                initFirebaseCloud();
+            } else {
+                window.addEventListener("firebase-ready", initFirebaseCloud, { once: true });
+                setTimeout(() => {
+                    if (!isCloudReady) initFirebaseCloud();
+                }, 1500);
+            }
+        });
+    </script>
+</body>
+</html>
