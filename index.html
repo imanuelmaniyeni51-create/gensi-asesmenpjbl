@@ -2112,8 +2112,8 @@
             const URL_LOGO_NTT = "https://imanuelmaniyeni51-create.github.io/gensi-asesmenpjbl/logo-ntt.png";
             const URL_LOGO_SMK = "https://imanuelmaniyeni51-create.github.io/gensi-asesmenpjbl/logo-smk.png";
             
-            const srcKiri = (!appState.logoKiri || appState.logoKiri === "BUILTIN_NTT") ? SVG_LOGO_NTT : appState.logoKiri;
-            const srcKanan = (!appState.logoKanan || appState.logoKanan === "BUILTIN_SMK") ? SVG_LOGO_SMK : appState.logoKanan;
+            const srcKiri = (!appState.logoKiri || appState.logoKiri === "BUILTIN_NTT") ? URL_LOGO_NTT : appState.logoKiri;
+            const srcKanan = (!appState.logoKanan || appState.logoKanan === "BUILTIN_SMK") ? URL_LOGO_SMK : appState.logoKanan;
 
             document.querySelectorAll(".img-logo-kiri").forEach(img => {
                 img.crossOrigin = "anonymous";
