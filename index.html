@@ -1391,8 +1391,8 @@
         ];
 
         const defaultState = {
-            logoKiri: "https://imanuelmaniyeni51-create.github.io/gensi-asesmenpjbl/NTT.png",
-            logoKanan: "https://imanuelmaniyeni51-create.github.io/gensi-asesmenpjbl/Logo Sekolah.png",
+            logoKiri: "https://imanuelmaniyeni51-create.github.io/gensi-asesmenpjbl/logo-ntt.png",
+            logoKanan: "https://imanuelmaniyeni51-create.github.io/gensi-asesmenpjbl/logo-smk.png",
             mapel: "Projek IPAS",
             kompetensiKeahlian: "Agribisnis Ternak Unggas",
             kelasFase: "Kelas X / Fase E",
@@ -2109,14 +2109,19 @@
             ["kelasFase", "bentukProyek", "tagihanProyek", "karakteristikMurid"].forEach(syncDropdownUI);
 
             // Logo Kiri & Kanan
+            const URL_LOGO_NTT = "https://imanuelmaniyeni51-create.github.io/gensi-asesmenpjbl/logo-ntt.png";
+            const URL_LOGO_SMK = "https://imanuelmaniyeni51-create.github.io/gensi-asesmenpjbl/logo-smk.png";
+            
             const srcKiri = (!appState.logoKiri || appState.logoKiri === "BUILTIN_NTT") ? SVG_LOGO_NTT : appState.logoKiri;
             const srcKanan = (!appState.logoKanan || appState.logoKanan === "BUILTIN_SMK") ? SVG_LOGO_SMK : appState.logoKanan;
 
             document.querySelectorAll(".img-logo-kiri").forEach(img => {
+                img.crossOrigin = "anonymous";
                 img.src = srcKiri;
                 img.onerror = () => { img.src = SVG_LOGO_NTT; };
             });
             document.querySelectorAll(".img-logo-kanan").forEach(img => {
+                img.crossOrigin = "anonymous";
                 img.src = srcKanan;
                 img.onerror = () => { img.src = SVG_LOGO_SMK; };
             });
